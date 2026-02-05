@@ -11,7 +11,7 @@
 | --- | --- | --- |
 | 软件源/镜像 | APT / Docker / NPM / Maven / Conda / Go / GitHub 镜像 | 自动应用到对应工具；GitHub 下载支持镜像轮询 |
 | 驱动/硬件 | 自动安装推荐驱动；NVIDIA DRM 检测与启用；MT7922 相关 GRUB 参数 | NVIDIA：写入 `nvidia-drm modeset=1` 并更新 initramfs |
-| 基础依赖 | 常用 CLI、构建工具、输入法、Wayland 会话、媒体/系统工具等 | 以 Kubuntu 24.04 最小安装为基线补齐 |
+| 基础依赖 | 常用 CLI、构建工具、输入法、Wayland 会话、媒体/系统工具等 | 以 Kubuntu 24.04 最小安装为基准补齐 |
 | 命令/入口 | `proxy_on` / `proxy_off` | 同时写入 `~/.zshrc`、`~/.bashrc` 与 `~/.local/bin` |
 | 常用软件 | 按功能分组安装：浏览器/IDE/通信/办公/远控/下载/终端等 | 部分软件通过 GitHub Release/官网直链拉取 `.deb` |
 | 代理 | 默认提示并使用本地代理端口（可跳过） | 影响 APT/GitHub 下载/Docker systemd proxy 等 |
@@ -95,7 +95,7 @@ bash "init.sh" --dry-run
 | `proxy_off` | `~/.local/bin/proxy_off` + `~/.zshrc`/`~/.bashrc` 函数 | 清理上述代理环境变量 |
 | `typora` | `/usr/local/bin/typora` | Typora 安装后创建的软链接（指向 `/opt/typora/Typora`） |
 
-## 常用软件与开发环境（按功能分区，详细）
+## 常用软件与开发环境
 
 > 说明：默认全选；可在交互界面取消勾选。不同软件来源/额外动作见备注列。
 
@@ -104,6 +104,7 @@ bash "init.sh" --dry-run
 | 词典/阅读 | GoldenDict-ng | APT | 通过代理参数执行 `apt update/install` |
 | 浏览器 | Google Chrome | 官网 `.deb` | `smart_install_deb` 自动下载并 `apt install` |
 | 开发/IDE | Visual Studio Code | 官网直链 `.deb` | 同上 |
+| 开发/IDE | Antigravity | 官方源 | 写入 keyring + source.list 并安装（默认全选可取消） |
 | 数据库工具 | DBeaver CE | 官网 `.deb` | 同上 |
 | 即时通信 | WeChat | 官网 `.deb` | 同上 |
 | 即时通信 | Linux QQ | 官网页面解析最新 `.deb` | 失败则跳过，不中断 |
@@ -128,7 +129,6 @@ bash "init.sh" --dry-run
 | CLI 工具 | Claude Code / Codex | `npm -g` | `claude_codex` 选项；依赖 Node |
 | Go | tar.gz（镜像优先） | 下载解压 | 安装到 `/usr/local/go`，并在后续步骤写入 `~/.zshrc` 添加 PATH |
 | Python/Conda | Miniconda | 安装脚本 | init bash/zsh；配置 TUNA channels |
-| 更新器 | Antigravity | 官方源 | 写入 keyring + source.list 并安装（默认全选可取消） |
 
 ## 代理（默认使用，可开/关）
 
