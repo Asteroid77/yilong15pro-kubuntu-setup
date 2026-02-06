@@ -82,7 +82,7 @@ bash "init.sh" --dry-run
 | 性能/运行库 | `libtcmalloc-minimal4` |
 | 桌面/会话 | `plasma-workspace-wayland`（Plasma Wayland 会话） |
 | 输入法 | `im-config` `fcitx5` `fcitx5-chinese-addons` `fcitx5-rime` `fcitx5-config-qt` `fcitx5-frontend-gtk2/gtk3/qt5` `librime-data-*` |
-| 系统/多媒体 | `yakuake` `btop` `vlc` `okular` `wireshark` `calibre` `ffmpegthumbs` |
+| 系统/多媒体 | `yakuake` `btop` `okular` `wireshark` `calibre` `ffmpegthumbs` |
 | Shell/字体 | `zsh` `fonts-firacode` |
 | Git GUI | `gitg` |
 | 交互 UI | `whiptail`（默认交互式勾选依赖） |
@@ -116,7 +116,7 @@ bash "init.sh" --dry-run
 | 文档写作 | Typora | tar.gz | 安装到 `/opt/typora` 并修复 Electron sandbox 权限、写入 desktop 文件 |
 | 终端增强 | Yakuake | APT | 作为下拉终端 |
 | 系统监控 | btop | APT |  |
-| 多媒体 | VLC | APT |  |
+| 播放器 | MPV + uosc + thumbfast | APT + 安装脚本 + Git clone | 写入 `~/.config/mpv/mpv.conf`/`input.conf`（marker 幂等追加）；thumbfast 会创建 `scripts/thumbfast.lua` 软链 |
 | 文档阅读 | Okular | APT |  |
 | 抓包 | Wireshark | APT |  |
 | 电子书 | Calibre | APT |  |
