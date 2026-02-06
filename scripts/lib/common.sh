@@ -75,6 +75,7 @@ enable_dry_run_shims() {
     bash() { dry_echo "bash $*"; return 0; }
     wget() { dry_echo "wget $*"; return 0; }
     curl() { dry_echo "curl $*"; return 0; }
+    git() { dry_echo "git $*"; return 0; }
     gpg() { dry_echo "gpg $*"; cat >/dev/null || true; return 0; }
     tee() { dry_echo "tee $*"; cat >/dev/null; return 0; }
     touch() { dry_echo "touch $*"; return 0; }
@@ -534,6 +535,7 @@ reset_selected_features_to_all() {
 
 select_install_features() {
     local -a FEATURES=(
+        "mpv_uosc_thumbfast|MPV + uosc + thumbfast|on"
         "clash_verge|Clash Verge (代理 GUI)|on"
         "goldendict|GoldenDict-ng|on"
         "chrome|Google Chrome|on"

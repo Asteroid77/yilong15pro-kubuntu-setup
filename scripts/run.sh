@@ -54,6 +54,8 @@ source "$ROOT_DIR/scripts/steps/01_core.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/02_clash.sh"
 # shellcheck source=/dev/null
+source "$ROOT_DIR/scripts/steps/03_mpv.sh"
+# shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/03_apps.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/04_dev.sh"
@@ -78,6 +80,7 @@ main() {
     step_00_sources
     step_01_core
     step_02_clash
+    step_03_mpv
     step_03_apps
     step_04_dev
     step_05_kvm

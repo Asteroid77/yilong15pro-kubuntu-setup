@@ -9,7 +9,7 @@ step_01_core() {
             fcitx5-frontend-gtk2 fcitx5-frontend-gtk3 fcitx5-frontend-qt5 \
             librime-data-luna-pinyin librime-data-stroke librime-data-wubi \
             plasma-workspace-wayland \
-            yakuake btop vlc okular wireshark calibre zsh fonts-firacode ffmpegthumbs unzip net-tools \
+            yakuake btop okular wireshark calibre zsh fonts-firacode ffmpegthumbs unzip net-tools \
             gitg
 
         info "安装显卡驱动..."
@@ -32,4 +32,3 @@ step_01_core() {
         warn "步骤 1 已完成"
     fi
 }
-
