@@ -54,15 +54,15 @@ bash "init.sh" --dry-run
 
 补充：以下软件使用官网直链/页面解析下载（不经 APT 源），便于对照与排障：
 
-| 软件 | 下载来源 |
-| --- | --- |
-| Chrome | `dl.google.com` |
-| VS Code | `code.visualstudio.com` |
-| WeChat | `dldir1.qq.com` |
-| DBeaver CE | `dbeaver.io` |
-| WPS Office | `linux.wps.cn`（页面） + `wps-linux-personal.wpscdn.cn`（deb） |
-| Typora | `download.typora.io` |
-| Sublime Merge | `download.sublimetext.com`（APT 源） |
+| 软件                  | 下载来源                                                      |
+| ------------------- | --------------------------------------------------------- |
+| Chrome              | `dl.google.com`                                           |
+| VS Code             | `code.visualstudio.com`                                   |
+| WeChat              | `dldir1.qq.com`                                           |
+| DBeaver CE          | `dbeaver.io`                                              |
+| WPS Office          | `linux.wps.cn`（页面） + `wps-linux-personal.wpscdn.cn`（deb）  |
+| Obsidian            | `github.com/obsidianmd/obsidian-releases`（GitHub Release） |
+| Sublime Merge       | `download.sublimetext.com`（APT 源）                         |
 
 ## 驱动初始化（详细）
 
@@ -93,7 +93,6 @@ bash "init.sh" --dry-run
 | --- | --- | --- |
 | `proxy_on [port]` | `~/.local/bin/proxy_on` + `~/.zshrc`/`~/.bashrc` 函数 | 设置 `http(s)_proxy/all_proxy`（默认读取缓存端口文件） |
 | `proxy_off` | `~/.local/bin/proxy_off` + `~/.zshrc`/`~/.bashrc` 函数 | 清理上述代理环境变量 |
-| `typora` | `/usr/local/bin/typora` | Typora 安装后创建的软链接（指向 `/opt/typora/Typora`） |
 
 ## 常用软件与开发环境
 
@@ -113,7 +112,7 @@ bash "init.sh" --dry-run
 | 终端 | Tabby Terminal | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 下载 | Motrix | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 远程控制 | RustDesk | GitHub Release `.deb` | GitHub 镜像轮询下载 |
-| 文档写作 | Typora | tar.gz | 安装到 `/opt/typora` 并修复 Electron sandbox 权限、写入 desktop 文件 |
+| 文档写作 | Obsidian | GitHub Release `.deb` | 通过 GitHub API 获取最新版并安装；建议安装常用社区插件（见下） |
 | 终端增强 | Yakuake | APT | 作为下拉终端 |
 | 系统监控 | btop | APT |  |
 | 播放器 | MPV + uosc + thumbfast | APT + 安装脚本 + Git clone | 写入 `~/.config/mpv/mpv.conf`/`input.conf`（marker 幂等追加）；thumbfast 会创建 `scripts/thumbfast.lua` 软链 |
@@ -129,6 +128,17 @@ bash "init.sh" --dry-run
 | CLI 工具 | Claude Code / Codex | `npm -g` | `claude_codex` 选项；依赖 Node |
 | Go | tar.gz（镜像优先） | 下载解压 | 安装到 `/usr/local/go`，并在后续步骤写入 `~/.zshrc` 添加 PATH |
 | Python/Conda | Miniconda | 安装脚本 | init bash/zsh；配置 TUNA channels |
+
+### Obsidian 插件建议
+
+建议在 Obsidian 中安装以下社区插件：
+
+- `Custom Attachment Location`
+- `Editing Toolbar`
+- `make.md`
+- `Markdown prettifier`
+- `Style settings`
+- `Table Generator`
 
 ## 代理（默认使用，可开/关）
 

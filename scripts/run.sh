@@ -66,7 +66,7 @@ source "$ROOT_DIR/scripts/steps/06_fonts.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/07_shell.sh"
 # shellcheck source=/dev/null
-source "$ROOT_DIR/scripts/steps/08_typora.sh"
+source "$ROOT_DIR/scripts/steps/08_obsidian.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/09_fcitx_rime.sh"
 # shellcheck source=/dev/null
@@ -86,7 +86,7 @@ main() {
     step_05_kvm
     step_06_fonts
     step_07_shell
-    step_08_typora
+    step_08_obsidian
     step_09_fcitx_rime
     step_10_antigravity
     step_11_mt7922
