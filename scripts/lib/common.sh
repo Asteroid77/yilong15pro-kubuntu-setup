@@ -361,6 +361,44 @@ nvidia_drm_modeset_enabled() {
     [ "$VALUE" = "Y" ] || [ "$VALUE" = "1" ]
 }
 
+is_graphical_session() {
+    [ "${XDG_SESSION_TYPE:-}" = "wayland" ] || \
+    [ "${XDG_SESSION_TYPE:-}" = "x11" ] || \
+    [ -n "${WAYLAND_DISPLAY:-}" ] || \
+    [ -n "${DISPLAY:-}" ]
+}
+
+run_if_graphical() {
+    if [ "$#" -eq 0 ]; then
+        error "run_if_graphical: 未提供要执行的命令"
+        return 1
+    fi
+
+    if ! is_graphical_session; then
+        info "当前非图形会话，跳过执行: $1"
+        return 0
+    fi
+
+    "$@"
+}
+
+restart_fcitx5_process() {
+    if command -v kquitapp5 >/dev/null 2>&1; then
+        kquitapp5 fcitx5 >/dev/null 2>&1 || pkill -x fcitx5 >/dev/null 2>&1 || true
+    else
+        pkill -x fcitx5 >/dev/null 2>&1 || true
+    fi
+    fcitx5 -d >/dev/null 2>&1 || true
+}
+
+restart_fcitx5_if_graphical() {
+    if ! command -v fcitx5 >/dev/null 2>&1; then
+        return 0
+    fi
+
+    run_if_graphical restart_fcitx5_process
+}
+
 enable_nvidia_drm_modeset() {
     local CONF="/etc/modprobe.d/nvidia-drm-modeset.conf"
     local LINE="options nvidia-drm modeset=1"
