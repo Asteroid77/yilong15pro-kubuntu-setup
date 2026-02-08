@@ -78,10 +78,10 @@ bash "init.sh" --dry-run
 
 | 分类 | 安装内容 |
 | --- | --- |
-| 基础工具 | `curl` `wget` `jq` `grep` `git` `build-essential` `software-properties-qt` `apt-transport-https` `unzip` `net-tools` |
+| 基础工具 | `curl` `wget` `jq` `grep` `git` `build-essential` `software-properties-qt` `apt-transport-https` `unzip` `net-tools` `wl-clipboard`（提供 `wl-paste`） |
 | 性能/运行库 | `libtcmalloc-minimal4` |
 | 桌面/会话 | `plasma-workspace-wayland`（Plasma Wayland 会话） |
-| 输入法 | `im-config` `fcitx5` `fcitx5-chinese-addons` `fcitx5-rime` `fcitx5-config-qt` `fcitx5-frontend-gtk2/gtk3/qt5` `librime-data-*` |
+| 输入法 | `im-config` `fcitx5` `fcitx5-chinese-addons` `fcitx5-rime` `fcitx5-configtool` `fcitx5-config-qt` `kde-config-fcitx5` `fcitx5-frontend-qt6/gtk3/gtk4` `librime-data-*` |
 | 系统/多媒体 | `yakuake` `btop` `okular` `wireshark` `calibre` `ffmpegthumbs` |
 | Shell/字体 | `zsh` `fonts-firacode` |
 | Git GUI | `gitg` |
