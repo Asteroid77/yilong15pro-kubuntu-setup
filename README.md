@@ -141,6 +141,12 @@ bash "init.sh" --dry-run
 - `Style settings`
 - `Table Generator`
 
+### IDE 反代（可选）
+
+如果需要为 IDE 场景做反代，可参考：`https://github.com/justlovemaki/AIClient-2-API`。
+
+该项目基于 Docker 运行；考虑到用户可能使用 `docker compose` 编排且配置差异较大，脚本默认不集成。
+
 ## 代理（默认使用，可开/关）
 
 脚本默认会走“本地代理”流程：在早期阶段**提示输入代理端口**（可回车跳过），并将端口缓存到 `~/Downloads/kubuntu_master_cache/.state/proxy_port`；后续执行时会优先读取该缓存端口并尽可能使用代理。  

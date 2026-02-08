@@ -21,6 +21,9 @@ step_99_finish() {
     echo -e "${BLUE}【Wayland】${NC}"
     echo -e "  ${RED}★ 请重启系统，并在登录界面选择 Plasma (Wayland) 会话${NC}"
     echo ""
+    echo -e "${BLUE}【IDE 反代（可选）】${NC}"
+    echo -e "  可参考：https://github.com/justlovemaki/AIClient-2-API"
+    echo -e "  该项目基于 Docker 运行；考虑到你可能使用 docker compose 编排，脚本默认不集成"
+    echo ""
     echo -e "${GREEN}════════════════════════════════════════════════${NC}"
 }
-
