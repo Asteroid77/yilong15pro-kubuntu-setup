@@ -34,5 +34,6 @@ EOF
     rewrite_keep_only_xmodifiers "$HOME/.xprofile" "xprofile"
     rewrite_keep_only_xmodifiers "$HOME/.pam_environment" "pam_environment"
     im-config -n none 2>/dev/null || true
-}
 
+    restart_fcitx5_if_graphical
+}
