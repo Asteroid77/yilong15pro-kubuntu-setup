@@ -46,6 +46,7 @@ readonly REPO_LXGW_WENKAI="lxgw/LxgwWenKai"
 readonly REPO_TABBY="Eugeny/tabby"
 readonly REPO_MOTRIX="agalwood/Motrix"
 readonly REPO_RUSTDESK="rustdesk/rustdesk"
+readonly REPO_ANTIGRAVITY_MANAGER="lbjlaq/Antigravity-Manager"
 readonly REPO_OBSIDIAN="obsidianmd/obsidian-releases"
 
 log() { echo -e "${GREEN}[DONE] $1${NC}"; }
@@ -591,7 +592,7 @@ select_install_features() {
         "go|Go (官方二进制包)|on"
         "miniconda|Miniconda|on"
         "obsidian|Obsidian|on"
-        "antigravity|Antigravity|on"
+        "antigravity|Antigravity + Antigravity-Manager|on"
     )
 
     echo ""

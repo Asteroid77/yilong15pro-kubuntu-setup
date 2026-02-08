@@ -14,6 +14,29 @@ step_10_antigravity() {
             sudo apt install -y antigravity "${APT_PROXY_ARGS[@]}"
         fi
     fi
+
+    if is_feature_enabled "antigravity"; then
+        local MANAGER_URL
+        local MANAGER_FILE="antigravity-manager.deb"
+        local MANAGER_PKG=""
+
+        MANAGER_URL=$(github_latest_deb_url "$REPO_ANTIGRAVITY_MANAGER")
+        if [ -n "$MANAGER_URL" ]; then
+            if download_github_robust "$MANAGER_URL" "$MANAGER_FILE" && check_deb_valid "$MANAGER_FILE"; then
+                MANAGER_PKG=$(dpkg-deb -f "$MANAGER_FILE" Package 2>/dev/null || true)
+                if [ -n "$MANAGER_PKG" ] && is_pkg_installed "$MANAGER_PKG"; then
+                    warn "Antigravity-Manager 已安装"
+                else
+                    info "安装 Antigravity-Manager..."
+                    sudo apt install -y "./$MANAGER_FILE"
+                fi
+            else
+                warn "Antigravity-Manager 包下载或校验失败，跳过"
+            fi
+        else
+            warn "未获取到 Antigravity-Manager 最新下载地址，跳过"
+        fi
+    fi
+
     set -e
 }
-

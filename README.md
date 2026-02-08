@@ -62,6 +62,7 @@ bash "init.sh" --dry-run
 | DBeaver CE          | `dbeaver.io`                                              |
 | WPS Office          | `linux.wps.cn`（页面） + `wps-linux-personal.wpscdn.cn`（deb）  |
 | Obsidian            | `github.com/obsidianmd/obsidian-releases`（GitHub Release） |
+| Antigravity-Manager | `github.com/lbjlaq/Antigravity-Manager`（GitHub Release）   |
 | Sublime Merge       | `download.sublimetext.com`（APT 源）                         |
 
 ## 驱动初始化（详细）
@@ -103,7 +104,7 @@ bash "init.sh" --dry-run
 | 词典/阅读 | GoldenDict-ng | APT | 通过代理参数执行 `apt update/install` |
 | 浏览器 | Google Chrome | 官网 `.deb` | `smart_install_deb` 自动下载并 `apt install` |
 | 开发/IDE | Visual Studio Code | 官网直链 `.deb` | 同上 |
-| 开发/IDE | Antigravity | 官方源 | 写入 keyring + source.list 并安装（默认全选可取消） |
+| 开发/IDE | Antigravity | 官方源 + GitHub Release | 安装 Antigravity，同时安装 Antigravity-Manager（默认全选可取消） |
 | 数据库工具 | DBeaver CE | 官网 `.deb` | 同上 |
 | 即时通信 | WeChat | 官网 `.deb` | 同上 |
 | 即时通信 | Linux QQ | 官网页面解析最新 `.deb` | 失败则跳过，不中断 |
