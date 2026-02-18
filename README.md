@@ -1,11 +1,11 @@
 # 翼龙 15 Pro → Linux（Kubuntu 24.04）迁移/初始化脚本
 
-面向 **翼龙 15 Pro**（笔记本）从 Windows/原系统迁移到 Linux 后的“一键初始化”脚本，目标发行版为 **Kubuntu 24.04**，并以 **最小安装（Minimal Installation）** 作为基准环境进行补齐与配置。
+面向 **翼龙 15 Pro**（笔记本）从 Windows/原系统迁移到 Linux 后的一键初始化脚本，发行版为 **Kubuntu 24.04**，以 **最小安装（Minimal Installation）** 作为基准环境进行补齐与配置。
 
 默认行为：**启动即进入交互式勾选界面**，并且 **默认全选**（回车即按全量执行）。  
 在勾选界面按 `Cancel` 或 `Esc` 会 **直接退出脚本且不做任何安装/修改**。
 
-## 功能概览（分区表格）
+## 功能概览
 
 | 分区 | 内容 | 备注（脚本额外动作） |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ bash "init.sh" --dry-run
 | Antigravity-Manager | `github.com/lbjlaq/Antigravity-Manager`（GitHub Release）   |
 | Sublime Merge       | `download.sublimetext.com`（APT 源）                         |
 
-## 驱动初始化（详细）
+## 驱动
 
 | 类别 | 动作 | 触发条件/备注 |
 | --- | --- | --- |
@@ -73,9 +73,9 @@ bash "init.sh" --dry-run
 | NVIDIA（Wayland 关键） | 检测 `/sys/module/nvidia_drm/parameters/modeset`，未开启则写入 `options nvidia-drm modeset=1` 并 `update-initramfs -u` | 让 NVIDIA 在 Wayland 下更稳定；需要重启后生效 |
 | MT7922 / Wi‑Fi | 写入/更新 `/etc/default/grub` 的 `GRUB_CMDLINE_LINUX_DEFAULT` 并执行 `update-grub` | 检测到 MT7922 与否使用不同默认参数 |
 
-## 基础依赖（详细）
+## 基础依赖
 
-说明：此处以 **Kubuntu 24.04 最小安装**为起点，脚本补齐以下基础包（节选自 `scripts/steps/01_core.sh`）。
+以 **Kubuntu 24.04 最小安装**为起点，脚本补齐以下基础包（参考： `scripts/steps/01_core.sh`）。
 
 | 分类 | 安装内容 |
 | --- | --- |
@@ -84,11 +84,11 @@ bash "init.sh" --dry-run
 | 桌面/会话 | `plasma-workspace-wayland`（Plasma Wayland 会话） |
 | 输入法 | `im-config` `fcitx5` `fcitx5-chinese-addons` `fcitx5-rime` `fcitx5-configtool` `fcitx5-config-qt` `kde-config-fcitx5` `fcitx5-frontend-qt6/gtk3/gtk4` `librime-data-*` |
 | 系统/多媒体 | `yakuake` `btop` `okular` `wireshark` `calibre` `ffmpegthumbs` |
+| CLI 工具 | `bat`（`batcat`）`fd-find`（`fdfind`）`fzf` `ncdu` `tealdeer`（`tldr`） |
 | Shell/字体 | `zsh` `fonts-firacode` |
-| Git GUI | `gitg` |
 | 交互 UI | `whiptail`（默认交互式勾选依赖） |
 
-## 添加/生成的命令（详细）
+## 添加/生成的命令
 
 | 命令 | 位置 | 作用 |
 | --- | --- | --- |
@@ -120,13 +120,13 @@ bash "init.sh" --dry-run
 | 文档阅读 | Okular | APT |  |
 | 抓包 | Wireshark | APT |  |
 | 电子书 | Calibre | APT |  |
-| Git GUI | gitg | APT |  |
-| Shell | zsh + starship + zoxide | APT + 安装脚本 | 写入 `~/.zshrc` 初始化语句 |
+| Shell | zsh + starship + zoxide | APT + 安装脚本 | 写入 `~/.zshrc` 初始化语句；新增 `bat`/`fd`/`helpme` 别名 |
+| CLI 工具 | bat / fd / fzf / ncdu / tealdeer | APT | tealdeer 页面库通过 `ghfast.top` 加速下载并安装至 `~/.cache/tealdeer/tldr-pages` |
 | 字体 | FiraCode / JetBrainsMono Nerd Font / Inter / LXGW WenKai | APT + GitHub Release | `~/.local/share/fonts` 并 `fc-cache` |
 | Docker | Docker + Portainer | get.docker.com + Docker Hub | 写入 registry mirror；如设置代理端口则写 systemd proxy drop-in |
 | Java/Maven | SDKMan（优先）/ APT（兜底） | 安装脚本 + APT | 写入 `~/.m2/settings.xml` 使用阿里云 Maven 镜像 |
 | Node.js | fnm 安装 LTS | 安装脚本 | 设置 NPM 镜像源 |
-| CLI 工具 | Claude Code / Codex | `npm -g` | `claude_codex` 选项；依赖 Node |
+| npm 工具 | Claude Code / Codex | `npm -g` | `claude_codex` 选项；依赖 Node |
 | Go | tar.gz（镜像优先） | 下载解压 | 安装到 `/usr/local/go`，并在后续步骤写入 `~/.zshrc` 添加 PATH |
 | Python/Conda | Miniconda | 安装脚本 | init bash/zsh；配置 TUNA channels |
 
@@ -146,6 +146,8 @@ bash "init.sh" --dry-run
 如果需要为 IDE 场景做反代，可参考：`https://github.com/justlovemaki/AIClient-2-API`。
 
 该项目基于 Docker 运行；考虑到用户可能使用 `docker compose` 编排且配置差异较大，脚本默认不集成。
+
+如果需要为 API/Client 做反代，比如说在CC中使用GPT-5.3-Codex之类的模型，可以参考我的[博客](https://blog.astro777.cfd/posts/guide/using-codex-in-claude-code-cli/)。
 
 ## 代理（默认使用，可开/关）
 
