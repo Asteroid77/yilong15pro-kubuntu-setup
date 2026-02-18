@@ -11,7 +11,7 @@ step_01_core() {
             librime-data-luna-pinyin librime-data-stroke librime-data-wubi \
             plasma-workspace-wayland \
             yakuake btop okular wireshark calibre zsh fonts-firacode ffmpegthumbs unzip net-tools wl-clipboard \
-            gitg
+            bat fd-find fzf ncdu tealdeer
 
         info "安装显卡驱动..."
         sudo ubuntu-drivers autoinstall
