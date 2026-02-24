@@ -96,7 +96,5 @@ step_03_apps() {
         fi
     }
     install_github_smart "$REPO_TABBY" "tabby-terminal"
-    install_github_smart "$REPO_MOTRIX" "motrix"
     install_github_smart "$REPO_RUSTDESK" "rustdesk"
 }
-
