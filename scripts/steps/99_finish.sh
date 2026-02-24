@@ -23,7 +23,8 @@ step_99_finish() {
     echo ""
     echo -e "${BLUE}【IDE 反代（可选）】${NC}"
     echo -e "  可参考：https://github.com/justlovemaki/AIClient-2-API"
-    echo -e "  该项目基于 Docker 运行；考虑到你可能使用 docker compose 编排，脚本默认不集成"
+    echo -e "  每日容器服务 compose 文件：$HOME/docker-settings/docker-compose-daily.yml"
+    echo -e "  环境变量文件：$HOME/docker-settings/.env.daily"
     echo ""
     echo -e "${GREEN}════════════════════════════════════════════════${NC}"
 }

@@ -70,7 +70,7 @@ source "$ROOT_DIR/scripts/steps/08_obsidian.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/09_fcitx_rime.sh"
 # shellcheck source=/dev/null
-source "$ROOT_DIR/scripts/steps/10_antigravity.sh"
+source "$ROOT_DIR/scripts/steps/10_compose_services.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/11_mt7922.sh"
 # shellcheck source=/dev/null
@@ -88,7 +88,7 @@ main() {
     step_07_shell
     step_08_obsidian
     step_09_fcitx_rime
-    step_10_antigravity
+    step_10_compose_services
     step_11_mt7922
     step_99_finish
 }
