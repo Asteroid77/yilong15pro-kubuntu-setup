@@ -13,7 +13,7 @@
 | 驱动/硬件 | 自动安装推荐驱动；NVIDIA DRM 检测与启用；MT7922 相关 GRUB 参数 | NVIDIA：写入 `nvidia-drm modeset=1` 并更新 initramfs |
 | 基础依赖 | 常用 CLI、构建工具、输入法、Wayland 会话、媒体/系统工具等 | 以 Kubuntu 24.04 最小安装为基准补齐 |
 | 命令/入口 | `proxy_on` / `proxy_off` | 同时写入 `~/.zshrc`、`~/.bashrc` 与 `~/.local/bin` |
-| 常用软件 | 按功能分组安装：浏览器/IDE/通信/办公/远控/下载/终端等 | 部分软件通过 GitHub Release/官网直链拉取 `.deb` |
+| 常用软件 | 按功能分组安装：浏览器/IDE/通信/办公/远控/容器服务/终端等 | 部分软件通过 GitHub Release/官网直链拉取 `.deb`，容器服务通过 Docker Compose 部署 |
 | 代理 | 默认提示并使用本地代理端口（可跳过） | 影响 APT/GitHub 下载/Docker systemd proxy 等 |
 
 ## 运行方式
@@ -62,7 +62,6 @@ bash "init.sh" --dry-run
 | DBeaver CE          | `dbeaver.io`                                              |
 | WPS Office          | `linux.wps.cn`（页面） + `wps-linux-personal.wpscdn.cn`（deb）  |
 | Obsidian            | `github.com/obsidianmd/obsidian-releases`（GitHub Release） |
-| Antigravity-Manager | `github.com/lbjlaq/Antigravity-Manager`（GitHub Release）   |
 | Sublime Merge       | `download.sublimetext.com`（APT 源）                         |
 
 ## 驱动
@@ -104,14 +103,14 @@ bash "init.sh" --dry-run
 | 词典/阅读 | GoldenDict-ng | APT | 通过代理参数执行 `apt update/install` |
 | 浏览器 | Google Chrome | 官网 `.deb` | `smart_install_deb` 自动下载并 `apt install` |
 | 开发/IDE | Visual Studio Code | 官网直链 `.deb` | 同上 |
-| 开发/IDE | Antigravity | 官方源 + GitHub Release | 安装 Antigravity，同时安装 Antigravity-Manager（默认全选可取消） |
+| 容器服务 | 迅雷 | Docker Compose（`cnk3x/xunlei`） | 勾选 `xunlei` 时生成/更新 `~/docker-settings/docker-compose-daily.yml` 并启动该服务 |
+| 容器服务 | Antigravity-Manager | Docker Compose（`lbjlaq/antigravity-manager`） | 勾选 `antigravity_manager` 时生成/更新同一 compose 文件并启动该服务 |
 | 数据库工具 | DBeaver CE | 官网 `.deb` | 同上 |
 | 即时通信 | WeChat | 官网 `.deb` | 同上 |
 | 即时通信 | Linux QQ | 官网页面解析最新 `.deb` | 失败则跳过，不中断 |
 | 办公 | WPS Office | 从 `linux.wps.cn/wpslinuxlog` 抓取最新 `12.1.2.*` 的 `amd64.deb` | 宽松匹配 + 版本限制，抓取失败跳过 |
 | 版本控制 | Sublime Merge | 官方 APT 源 | 导入 GPG key + 写入源 + APT 安装 |
 | 终端 | Tabby Terminal | GitHub Release `.deb` | GitHub 镜像轮询下载 |
-| 下载 | Motrix | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 远程控制 | RustDesk | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 文档写作 | Obsidian | GitHub Release `.deb` | 通过 GitHub API 获取最新版并安装；建议安装常用社区插件（见下） |
 | 终端增强 | Yakuake | APT | 作为下拉终端 |
@@ -145,9 +144,10 @@ bash "init.sh" --dry-run
 
 如果需要为 IDE 场景做反代，可参考：`https://github.com/justlovemaki/AIClient-2-API`。
 
-该项目基于 Docker 运行；考虑到用户可能使用 `docker compose` 编排且配置差异较大，脚本默认不集成。
+脚本已内置日常容器服务部署：会生成 `~/docker-settings/docker-compose-daily.yml`，并按勾选项创建 `~/thunder/*` 或 `~/docker-settings/antigravity_tools` 目录。
 
 如果需要为 API/Client 做反代，比如说在CC中使用GPT-5.3-Codex之类的模型，可以参考我的[博客](https://blog.astro777.cfd/posts/guide/using-codex-in-claude-code-cli/)。
+
 
 ## 代理（默认使用，可开/关）
 
