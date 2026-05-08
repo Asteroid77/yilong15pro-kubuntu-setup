@@ -14,6 +14,7 @@
 | 基础依赖 | 常用 CLI、构建工具、输入法、Wayland 会话、媒体/系统工具等 | 以 Kubuntu 24.04 最小安装为基准补齐 |
 | 命令/入口 | `proxy_on` / `proxy_off` | 同时写入 `~/.zshrc`、`~/.bashrc` 与 `~/.local/bin` |
 | 常用软件 | 按功能分组安装：浏览器/IDE/通信/办公/远控/容器服务/终端等 | 部分软件通过 GitHub Release/官网直链拉取 `.deb`，容器服务通过 Docker Compose 部署 |
+| Plasma 外观 | `plasma_appearance`（Orchis Light + 顶部 Dock 布局） | 可选且默认关闭；安装主题包并重建顶部栏布局 |
 | 代理 | 默认提示并使用本地代理端口（可跳过） | 影响 APT/GitHub 下载/Docker systemd proxy 等 |
 
 ## 运行方式
@@ -31,6 +32,8 @@ bash "init.sh"
 ```bash
 bash "init.sh" --no-interactive
 ```
+
+说明：`--no-interactive` 仍按全量安装执行。若不希望脚本接管 Plasma 主题和面板布局，请使用默认交互模式并保持 `plasma_appearance` 不勾选。
 
 ### Dry-run（演示模式）
 
@@ -94,6 +97,18 @@ bash "init.sh" --dry-run
 | `proxy_on [port]` | `~/.local/bin/proxy_on` + `~/.zshrc`/`~/.bashrc` 函数 | 设置 `http(s)_proxy/all_proxy`（默认读取缓存端口文件） |
 | `proxy_off` | `~/.local/bin/proxy_off` + `~/.zshrc`/`~/.bashrc` 函数 | 清理上述代理环境变量 |
 
+## Plasma 外观路线（可选）
+
+| 路线 | 默认 | 安装内容 | 布局 |
+| --- | --- | --- | --- |
+| `plasma_appearance` | 关闭 | `orchis-kde` `qt5-style-kvantum` `papirus-icon-theme` | 顶部常驻栏：`菜单 / Spacer / 应用图标 Dock / Spacer / 系统托盘 / 时钟` |
+
+说明：
+- 该路线会应用 `Orchis` light 配色、Plasma 样式、Aurorae 窗口装饰、Kvantum Orchis、`Papirus-Light` 图标和 Breeze 光标。
+- 应用布局前会备份 `~/.config/plasma-org.kde.plasma.desktop-appletsrc`，备份文件名包含 `kubuntu-migrate-backup` 和时间戳。
+- 非 KDE Plasma 会话、缺少 `qdbus` 或 `lookandfeeltool` 时会跳过对应部分，不中断主流程。
+- 这是个人偏好的桌面布局，默认关闭；不想集成主题修改时保持不勾选即可。
+
 ## 常用软件与开发环境
 
 > 说明：默认全选；可在交互界面取消勾选。不同软件来源/额外动作见备注列。
@@ -110,6 +125,7 @@ bash "init.sh" --dry-run
 | 即时通信 | Linux QQ | 官网页面解析最新 `.deb` | 失败则跳过，不中断 |
 | 办公 | WPS Office | 从 `linux.wps.cn/wpslinuxlog` 抓取最新 `12.1.2.*` 的 `amd64.deb` | 宽松匹配 + 版本限制，抓取失败跳过 |
 | 版本控制 | Sublime Merge | 官方 APT 源 | 导入 GPG key + 写入源 + APT 安装 |
+| Plasma 外观 | `plasma_appearance`（可选） | APT + KDE 配置工具 | Orchis Light + Kvantum + Papirus-Light；重建顶部 Dock 状态栏布局，执行前备份 Plasma 布局 |
 | 终端 | Tabby Terminal | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 远程控制 | RustDesk | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 文档写作 | Obsidian | GitHub Release `.deb` | 通过 GitHub API 获取最新版并安装；建议安装常用社区插件（见下） |

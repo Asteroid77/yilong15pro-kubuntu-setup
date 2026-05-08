@@ -589,6 +589,7 @@ select_install_features() {
         "claude_codex|Claude Code + Codex (npm -g)|on"
         "go|Go (官方二进制包)|on"
         "miniconda|Miniconda|on"
+        "plasma_appearance|Orchis Light + 顶部 Dock 布局|off"
         "obsidian|Obsidian|on"
         "xunlei|迅雷（Docker Compose）|on"
         "antigravity_manager|Antigravity-Manager（Docker Compose）|on"
