@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/meteor-tmux"
+state_file="$state_dir/last-yakuake-restore"
+
+boot_id() {
+  cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf 'unknown-boot\n'
+}
+
+yakuake_pid() {
+  pgrep -u "$UID" -x yakuake 2>/dev/null | sort -n | tail -n 1 || true
+}
+
+current_instance() {
+  local pid
+
+  pid="$(yakuake_pid)"
+  [[ -n "$pid" ]] || return 1
+  printf '%s:%s\n' "$(boot_id)" "$pid"
+}
+
+tmux_server_running() {
+  tmux list-sessions >/dev/null 2>&1
+}
+
+start_tmux_for_continuum_restore() {
+  local bootstrap="meteor-bootstrap-$(date +%Y%m%d-%H%M%S)-$$"
+  tmux new-session -d -s "$bootstrap"
+  printf '%s\n' "$bootstrap"
+}
+
+wait_for_unattached_managed_sessions() {
+  local attempts="${METEOR_TMUX_RESTORE_WAIT_ATTEMPTS:-40}"
+  local i
+
+  for ((i = 0; i < attempts; i++)); do
+    if tmux list-sessions -F '#{session_name} #{session_attached}' 2>/dev/null |
+      awk '$1 ~ /^meteor-tab-/ && $2 == 0 { found = 1 } END { exit !found }'; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  return 1
+}
+
+import_unattached_managed_sessions() {
+  tmux list-sessions -F '#{session_name} #{session_attached}' 2>/dev/null |
+    awk '$1 ~ /^meteor-tab-/ && $2 == 0 { print $1 }' |
+    while IFS= read -r session; do
+      [[ -n "$session" ]] || continue
+      tmux-managed-sessions add "$session" >/dev/null 2>&1 || true
+    done
+}
+
+instance="$(current_instance)" || {
+  echo "Yakuake is not running" >&2
+  exit 1
+}
+
+mkdir -p "$state_dir"
+if [[ -r "$state_file" ]] && [[ "$(<"$state_file")" == "${instance}:restored" ]]; then
+  exit 0
+fi
+
+bootstrap=""
+if ! tmux_server_running; then
+  bootstrap="$(start_tmux_for_continuum_restore)"
+fi
+
+if wait_for_unattached_managed_sessions; then
+  import_unattached_managed_sessions
+  yakuake-restore-tabs
+  printf '%s\n' "${instance}:restored" >"$state_file"
+fi
+
+if [[ -n "$bootstrap" ]]; then
+  tmux kill-session -t "$bootstrap" 2>/dev/null || true
+fi

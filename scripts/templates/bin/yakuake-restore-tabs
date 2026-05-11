@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v qdbus6 >/dev/null 2>&1; then
+  echo "qdbus6 not found" >&2
+  exit 1
+fi
+
+if ! command -v tmux >/dev/null 2>&1; then
+  echo "tmux not found" >&2
+  exit 1
+fi
+
+if ! qdbus6 org.kde.yakuake >/dev/null 2>&1; then
+  yakuake >/dev/null 2>&1 &
+  for _ in {1..40}; do
+    qdbus6 org.kde.yakuake >/dev/null 2>&1 && break
+    sleep 0.1
+  done
+fi
+
+qdbus6 org.kde.yakuake >/dev/null 2>&1 || {
+  echo "Yakuake D-Bus service is not available" >&2
+  exit 1
+}
+
+mapfile -t sessions < <(
+  tmux-managed-sessions prune >/dev/null 2>&1 || true
+  tmux-managed-sessions list 2>/dev/null |
+    while IFS= read -r session; do
+      [[ -n "$session" ]] || continue
+      tmux display-message -p -t "$session" '#{session_name} #{session_attached} #{session_created}' 2>/dev/null || true
+    done |
+    awk '$1 ~ /^meteor-tab-/ && $2 == 0 { print $3, $1 }' |
+    sort -n |
+    awk '{ print $2 }'
+)
+
+if [[ -n "${YAKUAKE_RESTORE_EXCLUDE:-}" ]]; then
+  mapfile -t sessions < <(
+    printf '%s\n' "${sessions[@]}" |
+      awk -v excluded="$YAKUAKE_RESTORE_EXCLUDE" '$0 != excluded'
+  )
+fi
+
+if [[ "${#sessions[@]}" -eq 0 ]]; then
+  echo "No meteor-tab-* tmux sessions found" >&2
+  exit 0
+fi
+
+tab_title_for_session() {
+  local session="$1"
+  local title
+
+  title="$(tmux-session-title get "$session" 2>/dev/null || true)"
+  if [[ -n "$title" ]]; then
+    printf '%s\n' "$title"
+    return 0
+  fi
+
+  title="$(tmux display-message -p -t "$session" '#W' 2>/dev/null || true)"
+  if [[ -n "$title" && "$title" != "zsh" && "$title" != "bash" ]]; then
+    printf '%s\n' "$title"
+    return 0
+  fi
+
+  title="$(tmux display-message -p -t "$session" '#{pane_current_path}' 2>/dev/null || true)"
+  if [[ -n "$title" ]]; then
+    basename "$title"
+    return 0
+  fi
+
+  printf '%s\n' "${session#meteor-tab-}"
+}
+
+for session in "${sessions[@]}"; do
+  title="$(tab_title_for_session "$session")"
+  terminal_id="$(qdbus6 org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession)"
+  qdbus6 org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle "$terminal_id" "$title" >/dev/null 2>&1 || true
+  qdbus6 org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommandInTerminal "$terminal_id" "tmux attach-session -t '$session'" >/dev/null
+done

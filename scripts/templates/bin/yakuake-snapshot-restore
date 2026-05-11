@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/yakuake-snapshot"
+sessions_dir="$state_dir/sessions"
+previous_session_file="$state_dir/previous-session"
+current_session_file="$state_dir/current-session"
+restored_sources_dir="$state_dir/restored-sources"
+
+read_first_line() {
+  local file=$1
+  [[ -r "$file" ]] && sed -n '1p' "$file" || true
+}
+
+make_unique_title() {
+  local base=$1
+  local count
+
+  [[ -n "$base" ]] || base="terminal"
+  count="${title_counts[$base]:-0}"
+  count=$((count + 1))
+  title_counts[$base]=$count
+
+  if (( count == 1 )); then
+    unique_title="$base"
+  else
+    unique_title="$base ($count)"
+  fi
+}
+
+session_has_legacy_tmux_tabs() {
+  local source_tabs_dir=$1
+  local command_file
+
+  while IFS= read -r command_file; do
+    if grep -q 'tmux attach-session -t meteor-tab-' "$command_file" 2>/dev/null; then
+      return 0
+    fi
+  done < <(find "$source_tabs_dir" -mindepth 2 -maxdepth 2 -type f -name last_command -print 2>/dev/null)
+
+  return 1
+}
+
+source_session="$(read_first_line "$previous_session_file")"
+current_session="$(read_first_line "$current_session_file")"
+
+[[ -n "$source_session" ]] || exit 0
+[[ "$source_session" != "$current_session" ]] || exit 0
+
+tabs_dir="$sessions_dir/$source_session/tabs"
+[[ -d "$tabs_dir" ]] || exit 0
+
+first_tab="$(find "$tabs_dir" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null || true)"
+[[ -n "$first_tab" ]] || exit 0
+
+if session_has_legacy_tmux_tabs "$tabs_dir"; then
+  exit 0
+fi
+
+restore_scope="${current_session:-manual}"
+restore_marker_dir="$restored_sources_dir/$restore_scope"
+restore_marker="$restore_marker_dir/$source_session"
+[[ ! -e "$restore_marker" ]] || exit 0
+
+if ! command -v qdbus6 >/dev/null 2>&1; then
+  echo "qdbus6 not found" >&2
+  exit 1
+fi
+
+if ! qdbus6 org.kde.yakuake >/dev/null 2>&1; then
+  yakuake >/dev/null 2>&1 &
+  for _ in {1..40}; do
+    qdbus6 org.kde.yakuake >/dev/null 2>&1 && break
+    sleep 0.1
+  done
+fi
+
+qdbus6 org.kde.yakuake >/dev/null 2>&1 || {
+  echo "Yakuake D-Bus service is not available" >&2
+  exit 1
+}
+
+declare -A title_counts
+restored_count=0
+
+while IFS= read -r tab_dir; do
+  [[ -d "$tab_dir" ]] || continue
+  [[ ! -e "$tab_dir/ignored" ]] || continue
+  raw_title="$(sed -n '1p' "$tab_dir/title" 2>/dev/null || basename "$tab_dir")"
+  make_unique_title "$raw_title"
+  title="$unique_title"
+  cwd="$(sed -n '1p' "$tab_dir/cwd" 2>/dev/null || printf '%s\n' "$HOME")"
+  last_command="$(sed -n '1p' "$tab_dir/last_command" 2>/dev/null || true)"
+  [[ "$last_command" != *"tmux attach-session -t meteor-tab-"* ]] || continue
+  log_file="$tab_dir/output.log"
+  title_arg="$(printf '%q' "$title")"
+  cwd_arg="$(printf '%q' "$cwd")"
+  last_command_arg="$(printf '%q' "$last_command")"
+  log_file_arg="$(printf '%q' "$log_file")"
+  restore_command="cd $cwd_arg; clear; export YAKUAKE_SNAPSHOT_TITLE=$title_arg; [[ -n \${YAKUAKE_SNAPSHOT_TAB_DIR:-} ]] && printf '%s\n' $title_arg >\"\$YAKUAKE_SNAPSHOT_TAB_DIR/title\"; printf 'Last command: %s\n' $last_command_arg; [[ -n $last_command_arg ]] && print -r -- $last_command_arg >>\"\${HISTFILE:-\$HOME/.zsh_history}\"; printf '%s\n' '--- last output ---'; [[ -r $log_file_arg ]] && tail -n 120 $log_file_arg; printf '%s\n' '--- end ---'; exec zsh -i"
+
+  terminal_id="$(qdbus6 org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession)"
+  qdbus6 org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle "$terminal_id" "$title" >/dev/null 2>&1 || true
+  qdbus6 org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommandInTerminal "$terminal_id" "$restore_command" >/dev/null
+  restored_count=$((restored_count + 1))
+done < <(find "$tabs_dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
+
+if (( restored_count > 0 )); then
+  mkdir -p "$restore_marker_dir"
+  date -Is >"$restore_marker"
+fi

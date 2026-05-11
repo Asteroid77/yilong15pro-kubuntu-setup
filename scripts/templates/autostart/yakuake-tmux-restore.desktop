@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Yakuake tmux restore daemon
+Exec=/home/meteor/DEV/script/bin/yakuake-tmux-restore-daemon
+Terminal=false
+X-KDE-autostart-after=panel
+X-KDE-StartupNotify=false

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session="${1:-}"
+[[ "$session" == meteor-tab-* ]] || exit 0
+
+if command -v systemctl >/dev/null 2>&1; then
+  state="$(systemctl is-system-running 2>/dev/null || true)"
+  case "$state" in
+    stopping|offline) exit 0 ;;
+  esac
+fi
+
+attached="$(tmux display-message -p -t "$session" '#{session_attached}' 2>/dev/null || printf '1')"
+[[ "$attached" == "0" ]] || exit 0
+
+tmux kill-session -t "$session" 2>/dev/null || true
+
+resurrect_save="$HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+if [[ -x "$resurrect_save" ]]; then
+  "$resurrect_save" quiet >/dev/null 2>&1 || true
+fi

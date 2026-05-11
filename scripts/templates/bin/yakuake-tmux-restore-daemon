@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+interval="${YAKUAKE_TMUX_RESTORE_DAEMON_INTERVAL:-2}"
+
+while true; do
+  yakuake-tmux-restore-once >/dev/null 2>&1 || true
+  sleep "$interval"
+done

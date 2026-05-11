@@ -74,6 +74,8 @@ source "$ROOT_DIR/scripts/steps/10_compose_services.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/11_mt7922.sh"
 # shellcheck source=/dev/null
+source "$ROOT_DIR/scripts/steps/12_terminal_tools.sh"
+# shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/14_plasma_appearance.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/99_finish.sh"
@@ -92,6 +94,7 @@ main() {
     step_09_fcitx_rime
     step_10_compose_services
     step_11_mt7922
+    step_12_terminal_tools
     step_14_plasma_appearance
     step_99_finish
 }

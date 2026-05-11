@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/meteor-tmux"
+state_file="$state_dir/managed-sessions"
+
+mkdir -p "$state_dir"
+touch "$state_file"
+
+case "${1:-list}" in
+  add)
+    session="${2:?session required}"
+    grep -qxF "$session" "$state_file" || printf '%s\n' "$session" >>"$state_file"
+    ;;
+  remove)
+    session="${2:?session required}"
+    tmp="$(mktemp)"
+    grep -vxF "$session" "$state_file" >"$tmp" || true
+    mv "$tmp" "$state_file"
+    ;;
+  list)
+    cat "$state_file"
+    ;;
+  prune)
+    tmp="$(mktemp)"
+    while IFS= read -r session; do
+      [[ -n "$session" ]] || continue
+      tmux has-session -t "$session" 2>/dev/null && printf '%s\n' "$session"
+    done <"$state_file" >"$tmp"
+    mv "$tmp" "$state_file"
+    ;;
+  *)
+    echo "usage: tmux-managed-sessions [add SESSION|remove SESSION|list|prune]" >&2
+    exit 2
+    ;;
+esac
