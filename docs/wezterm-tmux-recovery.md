@@ -4,7 +4,7 @@
 
 This route is for WezTerm GUI tab recovery only.
 
-It does not use Yakuake/Konsole profiles, `~/.tmux.conf`, or the global tmux resurrect directory. Keep those routes separate; mixing them is what caused polluted restores such as old `meteor-tab-*` sessions appearing in WezTerm.
+It does not use desktop-terminal profiles, `~/.tmux.conf`, or the global tmux resurrect directory. WezTerm recovery owns a dedicated tmux socket, config, and resurrect state.
 
 ## Owned Files
 
@@ -28,7 +28,7 @@ KUbuntu Migrate templates:
 
 Each WezTerm GUI tab maps to one business tmux session. The tmux session name is the GUI tab title source, and each session can contain its own normal tmux windows and panes.
 
-The helper uses only the dedicated socket and config. On startup it restores the dedicated resurrect state, lists business sessions as `session_name<TAB>display_name`, and WezTerm rebuilds one GUI tab per business session. The post-save hook filters technical sessions and old Yakuake/Konsole session names out of the dedicated resurrect snapshot.
+The helper uses only the dedicated socket and config. On startup it restores the dedicated resurrect state, lists business sessions as `session_name<TAB>display_name`, and WezTerm rebuilds one GUI tab per business session. The post-save hook filters technical sessions and legacy session names out of the dedicated resurrect snapshot.
 
 The old `main` session plus window model is not migrated automatically. Existing `main` state can remain on disk, but this route treats `main`, `wezterm-tab-*`, and `meteor-tab-*` as non-business sessions and filters them from future WezTerm saves.
 
@@ -53,12 +53,12 @@ Expected result:
 - WezTerm GUI tabs are recreated from business tmux sessions.
 - GUI tab titles match tmux session names.
 - Each GUI tab retains its own tmux windows and panes.
-- Old `meteor-tab-*` Yakuake/Konsole sessions do not appear.
+- Old `meteor-tab-*` legacy sessions do not appear.
 
 ## Known Boundaries
 
 - This restores tmux sessions, windows, panes, working directories, and captured pane contents as supported by tmux-resurrect. It is not native terminal scrollback restoration.
 - WezTerm does not provide a reliable GUI close hook that can replace tmux-continuum autosave.
 - If `~/.local/state/wezterm-tmux/resurrect` is empty, the first clean run creates a fresh `wezterm-work-1` business session. Rename or recreate workspaces as needed.
-- Do not copy `~/.local/share/tmux/resurrect/last` into this route; that global file may contain old Yakuake/Konsole experiments.
+- Do not copy `~/.local/share/tmux/resurrect/last` into this route; that global file may contain unrelated terminal experiments.
 - Do not delete old resurrect files during this migration. If cleanup is needed, back up or rename them first.
