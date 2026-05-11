@@ -20,6 +20,16 @@ terminal_glow_tar_asset_regex() {
     esac
 }
 
+terminal_wezterm_asset_regex() {
+    local ARCH
+    ARCH=$(dpkg --print-architecture 2>/dev/null || echo "amd64")
+    case "$ARCH" in
+        amd64) echo '^WezTerm-.*Ubuntu.*x86_64\.deb$' ;;
+        arm64) echo '^WezTerm-.*Ubuntu.*aarch64\.deb$' ;;
+        *) return 1 ;;
+    esac
+}
+
 can_sudo_non_interactive() {
     sudo -n true >/dev/null 2>&1
 }
@@ -199,7 +209,7 @@ install_shell_terminal_tools_bootstrap() {
     upsert_managed_block "$HOME/.bashrc" "kubuntu-migrate terminal-tools" "$BASH_CONTENT"
 }
 
-install_tmux_restore_package() {
+install_wezterm_tmux_package() {
     if command -v tmux >/dev/null 2>&1; then
         warn "tmux 已安装"
         return 0
@@ -213,7 +223,7 @@ install_tmux_restore_package() {
     sudo apt install -y tmux "${APT_PROXY_ARGS[@]}"
 }
 
-install_tmux_restore_plugin() {
+install_wezterm_tmux_plugin() {
     local REPO=$1
     local TARGET=$2
 
@@ -231,78 +241,37 @@ install_tmux_restore_plugin() {
     fi
 }
 
-install_tmux_restore_plugins() {
-    install_tmux_restore_plugin "$REPO_TMUX_RESURRECT" "$HOME/.tmux/plugins/tmux-resurrect"
-    install_tmux_restore_plugin "$REPO_TMUX_CONTINUUM" "$HOME/.tmux/plugins/tmux-continuum"
+install_wezterm_tmux_plugins() {
+    install_wezterm_tmux_plugin "$REPO_TMUX_RESURRECT" "$HOME/.tmux/plugins/tmux-resurrect"
+    install_wezterm_tmux_plugin "$REPO_TMUX_CONTINUUM" "$HOME/.tmux/plugins/tmux-continuum"
 }
 
-install_tmux_restore_templates() {
-    info "写入 tmux restore 模板..."
-
-    install_template_with_backup "$(terminal_template_path "tmux/tmux.conf")" "$HOME/.tmux.conf"
-    install_template_with_backup "$(terminal_template_path "bin/meteor-tmux-auto")" "$HOME/DEV/script/bin/meteor-tmux-auto"
-    install_template_with_backup "$(terminal_template_path "bin/meteor-tmux-cleanup")" "$HOME/DEV/script/bin/meteor-tmux-cleanup"
-    install_template_with_backup "$(terminal_template_path "bin/tmux-managed-sessions")" "$HOME/DEV/script/bin/tmux-managed-sessions"
-    install_template_with_backup "$(terminal_template_path "bin/tmux-session-title")" "$HOME/DEV/script/bin/tmux-session-title"
-    install_template_with_backup "$(terminal_template_path "bin/tmux-close-current")" "$HOME/DEV/script/bin/tmux-close-current"
-    install_template_with_backup "$(terminal_template_path "bin/tmux-save-current")" "$HOME/DEV/script/bin/tmux-save-current"
-    install_template_with_backup "$(terminal_template_path "bin/yakuake-tmux-restore-once")" "$HOME/DEV/script/bin/yakuake-tmux-restore-once"
-    install_template_with_backup "$(terminal_template_path "bin/yakuake-tmux-restore-daemon")" "$HOME/DEV/script/bin/yakuake-tmux-restore-daemon"
-    install_template_with_backup "$(terminal_template_path "bin/yakuake-restore-tabs")" "$HOME/DEV/script/bin/yakuake-restore-tabs"
-    install_template_with_backup "$(terminal_template_path "konsole/TmuxRestore.profile")" "$HOME/.local/share/konsole/TmuxRestore.profile"
-    install_template_with_backup "$(terminal_template_path "autostart/yakuake-tmux-restore.desktop")" "$HOME/.config/autostart/yakuake-tmux-restore.desktop"
-
-    if [ "$DRY_RUN" -eq 1 ]; then
-        dry_echo "chmod +x $HOME/DEV/script/bin/meteor-tmux-auto $HOME/DEV/script/bin/meteor-tmux-cleanup $HOME/DEV/script/bin/tmux-managed-sessions $HOME/DEV/script/bin/tmux-session-title $HOME/DEV/script/bin/tmux-close-current $HOME/DEV/script/bin/tmux-save-current $HOME/DEV/script/bin/yakuake-tmux-restore-once $HOME/DEV/script/bin/yakuake-tmux-restore-daemon $HOME/DEV/script/bin/yakuake-restore-tabs"
-    else
-        chmod +x "$HOME/DEV/script/bin/meteor-tmux-auto" "$HOME/DEV/script/bin/meteor-tmux-cleanup" "$HOME/DEV/script/bin/tmux-managed-sessions" "$HOME/DEV/script/bin/tmux-session-title" "$HOME/DEV/script/bin/tmux-close-current" "$HOME/DEV/script/bin/tmux-save-current" "$HOME/DEV/script/bin/yakuake-tmux-restore-once" "$HOME/DEV/script/bin/yakuake-tmux-restore-daemon" "$HOME/DEV/script/bin/yakuake-restore-tabs"
-    fi
-}
-
-install_shell_tmux_restore_bootstrap() {
-    info "注入 kubuntu-migrate tmux-restore shell 片段..."
-
-    local ZSH_CONTENT
-    ZSH_CONTENT=$(cat "$(terminal_template_path "shell/tmux-restore.zsh")")
-
-    [ -f "$HOME/.zshrc" ] && backup_file_with_timestamp "$HOME/.zshrc" >/dev/null || true
-    upsert_managed_block "$HOME/.zshrc" "kubuntu-migrate tmux-restore" "$ZSH_CONTENT"
-}
-
-install_tmux_restore() {
-    if ! is_feature_enabled "tmux_restore"; then
-        warn "未勾选 tmux_restore 路线，跳过"
+install_wezterm() {
+    if command -v wezterm >/dev/null 2>&1 || is_pkg_installed "wezterm"; then
+        warn "WezTerm 已安装"
         return 0
     fi
 
-    install_tmux_restore_package
-    install_tmux_restore_plugins
-    install_tmux_restore_templates
-    install_shell_tmux_restore_bootstrap
-}
-
-install_yakuake_snapshot() {
-    if ! is_feature_enabled "yakuake_snapshot"; then
-        warn "未勾选 yakuake_snapshot 路线，跳过"
+    if [ "$DRY_RUN" -eq 1 ]; then
+        dry_echo "download latest WezTerm release (.deb) -> wezterm.deb"
+        dry_echo "sudo apt install -y ./wezterm.deb"
         return 0
     fi
 
-    info "写入 Yakuake snapshot 模板..."
-    install_template_with_backup "$(terminal_template_path "bin/yakuake-snapshot-shell")" "$HOME/DEV/script/bin/yakuake-snapshot-shell"
-    install_template_with_backup "$(terminal_template_path "bin/yakuake-snapshot-restore")" "$HOME/DEV/script/bin/yakuake-snapshot-restore"
-    install_template_with_backup "$(terminal_template_path "zsh/yakuake-snapshot.zsh")" "$HOME/DEV/script/zsh/yakuake-snapshot.zsh"
-    install_template_with_backup "$(terminal_template_path "konsole/YakuakeSnapshot.profile")" "$HOME/.local/share/konsole/YakuakeSnapshot.profile"
+    local ASSET_REGEX
+    ASSET_REGEX=$(terminal_wezterm_asset_regex) || {
+        error "当前架构暂未配置 WezTerm 安装规则"
+        return 1
+    }
 
-    if [ "$DRY_RUN" -eq 1 ]; then
-        dry_echo "chmod +x $HOME/DEV/script/bin/yakuake-snapshot-shell $HOME/DEV/script/bin/yakuake-snapshot-restore"
-    else
-        chmod +x "$HOME/DEV/script/bin/yakuake-snapshot-shell" "$HOME/DEV/script/bin/yakuake-snapshot-restore"
+    local WEZTERM_URL
+    WEZTERM_URL=$(terminal_latest_asset_url "$REPO_WEZTERM" "$ASSET_REGEX")
+    if [ -z "$WEZTERM_URL" ]; then
+        error "未获取到 WezTerm 最新安装包"
+        return 1
     fi
 
-    local ZSH_CONTENT
-    ZSH_CONTENT=$(cat "$(terminal_template_path "shell/yakuake-snapshot.zsh")")
-    [ -f "$HOME/.zshrc" ] && backup_file_with_timestamp "$HOME/.zshrc" >/dev/null || true
-    upsert_managed_block "$HOME/.zshrc" "kubuntu-migrate yakuake-snapshot" "$ZSH_CONTENT"
+    smart_install_deb "wezterm" "$WEZTERM_URL" "wezterm.deb"
 }
 
 install_wezterm_tmux_templates() {
@@ -325,35 +294,10 @@ install_wezterm_tmux() {
         return 0
     fi
 
-    install_tmux_restore_package
-    install_tmux_restore_plugins
+    install_wezterm
+    install_wezterm_tmux_package
+    install_wezterm_tmux_plugins
     install_wezterm_tmux_templates
-}
-
-cleanup_legacy_kitty_managed_block() {
-    remove_managed_block "$HOME/.zshrc" "kubuntu-migrate kitty"
-    remove_managed_block "$HOME/.bashrc" "kubuntu-migrate kitty"
-}
-
-cleanup_kitty_managed_files_if_disabled() {
-    if is_feature_enabled "kitty_terminal"; then
-        return 0
-    fi
-
-    info "移除 kitty 受控配置与桌面入口..."
-    local -a FILES=(
-        "$HOME/.config/kitty/kitty.conf"
-        "$HOME/.config/kitty/open-actions.conf"
-        "$HOME/.local/share/applications/kitty.desktop"
-        "$HOME/.local/share/applications/kitty-open.desktop"
-    )
-
-    for FILE in "${FILES[@]}"; do
-        if [ -f "$FILE" ]; then
-            backup_file_with_timestamp "$FILE" >/dev/null || true
-            rm -f "$FILE"
-        fi
-    done
 }
 
 step_12_terminal_tools() {
@@ -364,15 +308,11 @@ step_12_terminal_tools() {
         install_streamdown
         install_atuin
         install_terminal_tools_templates
-        cleanup_legacy_kitty_managed_block
         install_shell_terminal_tools_bootstrap
-        cleanup_kitty_managed_files_if_disabled
     else
         warn "未勾选 terminal_tools 路线，跳过"
     fi
 
-    install_tmux_restore
-    install_yakuake_snapshot
     install_wezterm_tmux
 
     log "终端增强步骤已完成"

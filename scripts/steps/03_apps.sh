@@ -95,6 +95,5 @@ step_03_apps() {
             warn "API 失败: $REPO"
         fi
     }
-    install_github_smart "$REPO_TABBY" "tabby-terminal"
     install_github_smart "$REPO_RUSTDESK" "rustdesk"
 }

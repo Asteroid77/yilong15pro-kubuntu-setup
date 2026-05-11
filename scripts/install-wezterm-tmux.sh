@@ -17,7 +17,6 @@ usage() {
   - 写入 ~/.wezterm.lua、~/.config/tmux/wezterm.conf、~/DEV/script/bin/wezterm-tmux-tab
   - 安装/更新 tmux-resurrect 与 tmux-continuum 插件
   - 不写入 ~/.tmux.conf，不读取全局 tmux resurrect 目录
-  - 不安装 Yakuake/Konsole 恢复路线，也不安装 kitty 路线
 EOF
 }
 
