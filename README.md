@@ -33,7 +33,23 @@ bash "init.sh"
 bash "init.sh" --no-interactive
 ```
 
-说明：`--no-interactive` 仍按全量安装执行。若不希望脚本接管 Plasma 主题和面板布局，请使用默认交互模式并保持 `plasma_appearance` 不勾选。
+说明：`--no-interactive` 仍按全量安装执行。若你是 `Konsole / Yakuake` 用户，只想安装 `Atuin + glow + Streamdown`，建议使用默认交互模式并取消勾选 `kitty_terminal`。
+
+注意：`plasma_appearance` 默认在交互列表中关闭；如不希望脚本接管 Plasma 主题和面板布局，请保持不勾选。`--no-interactive` 会按全量路线执行，也会启用该外观步骤。
+
+只配置 WezTerm + tmux GUI tabs：
+
+```bash
+bash "scripts/install-wezterm-tmux.sh"
+```
+
+预览将执行的动作：
+
+```bash
+bash "scripts/install-wezterm-tmux.sh" --dry-run
+```
+
+该入口只启用 `wezterm_tmux` 路线：安装/更新 `tmux`、`tmux-resurrect`、`tmux-continuum`，并写入 WezTerm 专用 `.wezterm.lua`、`~/.config/tmux/wezterm.conf` 和 `wezterm-tmux-tab` helper。它不写入 `~/.tmux.conf`，不读取全局 `~/.local/share/tmux/resurrect`，也不安装 Yakuake/Konsole 或 kitty 路线。
 
 ### Dry-run（演示模式）
 
@@ -48,7 +64,7 @@ bash "init.sh" --dry-run
 | 工具/场景 | 源/镜像 | 作用 |
 | --- | --- | --- |
 | APT（Ubuntu） | `mirrors.tuna.tsinghua.edu.cn` | 替换默认 Ubuntu archive/security 镜像 |
-| GitHub 下载镜像 | `ghfast.top` / `mirror.ghproxy.com` / `hub.gitmirror.com` / 直连 | 拉取 Release 资产/zip 时容灾与加速 |
+| GitHub 下载镜像 | `mirror.ghproxy.com` / `hub.gitmirror.com` / 直连 | 拉取 Release 资产/zip 时容灾与加速；如已配置本地代理则优先直连 GitHub |
 | Docker 镜像 | `docker.m.daocloud.io` / `dockerproxy.com` | 写入 `/etc/docker/daemon.json` 作为 registry mirror |
 | NPM | `registry.npmmirror.com` | `npm config set registry` |
 | Maven | `maven.aliyun.com/repository/public` | 写入 `~/.m2/settings.xml` mirror |
@@ -96,6 +112,33 @@ bash "init.sh" --dry-run
 | --- | --- | --- |
 | `proxy_on [port]` | `~/.local/bin/proxy_on` + `~/.zshrc`/`~/.bashrc` 函数 | 设置 `http(s)_proxy/all_proxy`（默认读取缓存端口文件） |
 | `proxy_off` | `~/.local/bin/proxy_off` + `~/.zshrc`/`~/.bashrc` 函数 | 清理上述代理环境变量 |
+| `mdv [file.md]` | `~/.zshrc`/`~/.bashrc` 的 `kubuntu-migrate terminal-tools` 受控片段 | 使用 `glow` 查看 Markdown；无参数时读取标准输入 |
+| `mdstream` | `~/.zshrc`/`~/.bashrc` 的 `kubuntu-migrate terminal-tools` 受控片段 | 使用 `Streamdown (sd)` 渲染流式 Markdown |
+| `mdrun <command ...>` | `~/.zshrc`/`~/.bashrc` 的 `kubuntu-migrate terminal-tools` 受控片段 | 用 `Streamdown` 包住一个命令并实时渲染其 Markdown 输出 |
+| `refreshapps` | `~/.zshrc`/`~/.bashrc` 的 `kubuntu-migrate terminal-tools` 受控片段 | 刷新用户级桌面入口与图标缓存 |
+| `t` / `tm` / `tn` / `tclose` / `tsave` / `yrestore` | `~/.zshrc` 的 `kubuntu-migrate tmux-restore` 受控片段 | `tmux_restore` 路线入口；`t` 进入一个独立 `meteor-tab-*` session，`tclose` 关闭当前受控 session 且不再恢复，`tsave` 强制保存，`yrestore` 对当前 Yakuake 实例执行一次外层标签恢复 |
+| `meteor-tmux-auto` / `tmux-close-current` / `tmux-save-current` / `yakuake-tmux-restore-once` / `yakuake-restore-tabs` | `~/DEV/script/bin/` | `tmux_restore` 路线内部脚本：为新标签创建新的受控 session、显式关闭当前受控 session、保存当前快照、按 Yakuake 实例执行一次恢复、通过 Yakuake D-Bus 恢复多个外层标签 |
+| `TmuxRestore` | `~/.local/share/konsole/TmuxRestore.profile` | Konsole/Yakuake 专用 profile；Command 指向 `meteor-tmux-auto` |
+| `wezterm-tmux-tab` | `~/DEV/script/bin/` | `wezterm_tmux` 路线内部脚本：一个 WezTerm GUI tab 对应一个业务 tmux session；使用独立 socket 与独立 resurrect 目录 |
+| `kssh <host>` | `~/.zshrc`/`~/.bashrc` 的 `kubuntu-migrate kitty` 受控片段 | 使用 `kitten ssh` 建立 kitty 远程会话 |
+
+## 终端路线
+
+| 路线 | 适用场景 | 安装内容 | Shell 片段/命令 |
+| --- | --- | --- | --- |
+| `terminal_tools` | 继续使用 `Konsole`、`Yakuake` 等现有终端 | `Atuin + glow + Streamdown` | 注入 `mdv` / `mdstream` / `mdrun` / `refreshapps` 与 `atuin init` |
+| `yakuake_snapshot` | 希望恢复 Yakuake 标签布局、目录、最后命令和最后输出，但不恢复进程 | 普通 shell + `script` 输出日志 + Yakuake D-Bus 恢复脚本 | 注入 `YakuakeSnapshot` profile、`ysnap-restore`；不使用 tmux，不接管鼠标/复制 |
+| `tmux_restore` | 需要 Konsole/Yakuake 标签在重启/崩溃后尽量恢复 | `tmux + tmux-resurrect + tmux-continuum` | 注入 `kubuntu-migrate tmux-restore`；默认提供 `t` / `tclose` / `tsave` / `yrestore`，设置 `AUTO_TMUX=1` 后新标签自动进入独立 `meteor-tab-*` session |
+| `wezterm_tmux` | 希望用 WezTerm GUI tabs 恢复终端工作区 | WezTerm 配置 + 独立 tmux socket/config/resurrect state | 写入 `~/.wezterm.lua`、`~/.config/tmux/wezterm.conf`、`wezterm-tmux-tab`；一个 WezTerm GUI tab 对应一个业务 tmux session |
+| `kitty_terminal` | 想单独启用 kitty 官方最新版 | 仅安装 kitty 与其配置/桌面入口 | 仅注入 `kssh` |
+
+说明：
+- 交互勾选里 `terminal_tools` 默认开启，`yakuake_snapshot`、`tmux_restore`、`wezterm_tmux` 和 `kitty_terminal` 默认关闭。
+- `kitty_terminal` 不再隐式安装 `Atuin + glow + Streamdown`。
+- 对 `Konsole / Yakuake` 用户，基础增强推荐启用 `terminal_tools`；需要重启/崩溃后恢复终端工作区时再启用 `tmux_restore`。
+- `yakuake_snapshot` 是普通终端体验优先的恢复方案：保存每个标签的目录、最后命令和输出日志，恢复时用 Yakuake D-Bus 重建普通 shell 标签并展示最后输出。它不能恢复正在运行的进程，但可以让用户按 `↑` 重新执行最后命令。
+- `tmux_restore` 使用“一个外层标签 = 一个 `meteor-tab-*` tmux session”的恢复模型。`TmuxRestore` profile 的 Command 永远只为新标签创建新的受控 session，不做恢复判定，避免按 `+` 时唤回历史内容。恢复动作由独立的 `yakuake-tmux-restore-once` / `yrestore` 负责：它按当前 Yakuake 进程实例只执行一次，先确保 tmux-continuum 有机会恢复 sessions，再通过 Yakuake D-Bus 为受控清单中的未连接 `meteor-tab-*` sessions 重建外层标签，避免把历史实验 session 全部拉回。恢复标签名优先使用 tmux window 名，其次使用 pane 当前目录名。主动关闭且不希望恢复时，在对应标签内运行 `tclose`；Yakuake/Konsole 本身没有可靠的“关闭某个标签前执行命令”的 hook。默认不强制接管每个新标签；推荐在 Konsole/Yakuake 里手动选择 `TmuxRestore` profile 来启用自动恢复入口。若需要全局自动接管，可在 shell 环境设置 `AUTO_TMUX=1`；若需要临时裸 shell，可用 `NO_TMUX=1 zsh`。
+- `wezterm_tmux` 是独立路线，不读取 `~/.tmux.conf` 和全局 `~/.local/share/tmux/resurrect`。它固定使用 socket `~/.local/state/tmux-wezterm/main.sock`、配置 `~/.config/tmux/wezterm.conf`、保存目录 `~/.local/state/wezterm-tmux/resurrect`，避免 Konsole/Yakuake 实验状态污染 WezTerm。恢复事实源是业务 tmux sessions；一个 WezTerm GUI tab 对应一个业务 session，GUI tab 标题来自 tmux session name，tab 内部可继续使用 tmux windows/panes。`Ctrl+Shift+T` 新建一个业务 session 和对应 GUI tab，`Ctrl+Shift+R` 重命名当前业务 session。保存快照时会过滤 `wezterm-tech-*`、旧 `wezterm-tab-*`、`meteor-tab-*` 和旧 `main` 状态。关闭并重开 WezTerm 时，`gui-startup` 会按业务 sessions 重建 GUI tabs。
 
 ## Plasma 外观路线（可选）
 
@@ -125,6 +168,10 @@ bash "init.sh" --dry-run
 | 即时通信 | Linux QQ | 官网页面解析最新 `.deb` | 失败则跳过，不中断 |
 | 办公 | WPS Office | 从 `linux.wps.cn/wpslinuxlog` 抓取最新 `12.1.2.*` 的 `amd64.deb` | 宽松匹配 + 版本限制，抓取失败跳过 |
 | 版本控制 | Sublime Merge | 官方 APT 源 | 导入 GPG key + 写入源 + APT 安装 |
+| 终端增强 | `terminal_tools`（Atuin + glow + Streamdown） | GitHub Release `.deb` + `pipx` + 官方安装脚本 | 推荐给 `Konsole / Yakuake` 用户；写入 `~/.config/atuin/config.toml`，向 `~/.zshrc` / `~/.bashrc` 注入 `mdv` / `mdstream` / `mdrun` / `refreshapps` |
+| 终端恢复 | `tmux_restore`（可选） | APT + GitHub clone | 安装 `tmux`、`tmux-resurrect`、`tmux-continuum`；写入 `~/.tmux.conf`，向 `~/.zshrc` 注入 Konsole/Yakuake 恢复入口，并提供 `yrestore` 重建多个 Yakuake 外层标签 |
+| 终端恢复 | `wezterm_tmux`（可选） | APT + GitHub clone + 配置模板 | 安装 `tmux`、`tmux-resurrect`、`tmux-continuum`；写入 WezTerm 专用 `.wezterm.lua`、专用 tmux config 和 `wezterm-tmux-tab` helper；不使用 Yakuake/Konsole 状态 |
+| 终端 | `kitty_terminal`（可选） | kitty upstream 二进制包 | 纯 kitty 路线；写入 `~/.config/kitty/kitty.conf` / `open-actions.conf`，向 `~/.zshrc` / `~/.bashrc` 注入 `kssh` |
 | Plasma 外观 | `plasma_appearance`（可选） | APT + KDE 配置工具 | Orchis Light + Kvantum + Papirus-Light；重建顶部 Dock 状态栏布局，执行前备份 Plasma 布局 |
 | 终端 | Tabby Terminal | GitHub Release `.deb` | GitHub 镜像轮询下载 |
 | 远程控制 | RustDesk | GitHub Release `.deb` | GitHub 镜像轮询下载 |
@@ -136,7 +183,7 @@ bash "init.sh" --dry-run
 | 抓包 | Wireshark | APT |  |
 | 电子书 | Calibre | APT |  |
 | Shell | zsh + starship + zoxide | APT + 安装脚本 | 写入 `~/.zshrc` 初始化语句；新增 `bat`/`fd`/`helpme` 别名 |
-| CLI 工具 | bat / fd / fzf / ncdu / tealdeer | APT | tealdeer 页面库通过 `ghfast.top` 加速下载并安装至 `~/.cache/tealdeer/tldr-pages` |
+| CLI 工具 | bat / fd / fzf / ncdu / tealdeer | APT | tealdeer 页面库通过 GitHub 代理/镜像逻辑下载并安装至 `~/.cache/tealdeer/tldr-pages` |
 | 字体 | FiraCode / JetBrainsMono Nerd Font / Inter / LXGW WenKai | APT + GitHub Release | `~/.local/share/fonts` 并 `fc-cache` |
 | Docker | Docker + Portainer | get.docker.com + Docker Hub | 写入 registry mirror；如设置代理端口则写 systemd proxy drop-in |
 | Java/Maven | SDKMan（优先）/ APT（兜底） | 安装脚本 + APT | 写入 `~/.m2/settings.xml` 使用阿里云 Maven 镜像 |
