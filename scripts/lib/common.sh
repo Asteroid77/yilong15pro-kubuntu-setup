@@ -10,7 +10,6 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 readonly -a GITHUB_MIRRORS=(
-    "https://ghfast.top/"
     "https://mirror.ghproxy.com/"
     "https://hub.gitmirror.com/"
     ""
@@ -541,6 +540,92 @@ append_if_missing() {
     grep -qF "$2" "$1" || append_line "$1" "$2"
 }
 
+backup_file_with_timestamp() {
+    local TARGET=$1
+    [ -f "$TARGET" ] || return 0
+
+    local BACKUP_PATH="${TARGET}.bak.$(date +%Y%m%d-%H%M%S)"
+    if [ "$DRY_RUN" -eq 1 ]; then
+        dry_echo "backup_file_with_timestamp: $TARGET -> $BACKUP_PATH"
+        echo "$BACKUP_PATH"
+        return 0
+    fi
+
+    cp -a "$TARGET" "$BACKUP_PATH"
+    echo "$BACKUP_PATH"
+}
+
+upsert_managed_block() {
+    local TARGET=$1
+    local MARKER=$2
+    local CONTENT=$3
+    local START_MARKER="# >>> ${MARKER} >>>"
+    local END_MARKER="# <<< ${MARKER} <<<"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        dry_echo "upsert_managed_block: $TARGET [$MARKER]"
+        return 0
+    fi
+
+    [ -f "$TARGET" ] || touch "$TARGET"
+
+    local TMP_FILE
+    TMP_FILE=$(mktemp)
+
+    awk -v start="$START_MARKER" -v end="$END_MARKER" '
+        $0 == start { skip=1; next }
+        $0 == end { skip=0; next }
+        skip != 1 { print }
+    ' "$TARGET" > "$TMP_FILE"
+
+    if [ -s "$TMP_FILE" ]; then
+        printf '\n' >> "$TMP_FILE"
+    fi
+    printf '%s\n' "$START_MARKER" >> "$TMP_FILE"
+    printf '%s\n' "$CONTENT" >> "$TMP_FILE"
+    printf '%s\n' "$END_MARKER" >> "$TMP_FILE"
+
+    mv "$TMP_FILE" "$TARGET"
+}
+
+remove_managed_block() {
+    local TARGET_FILE=$1
+    local MARKER=$2
+    local START_MARKER="# >>> ${MARKER} >>>"
+    local END_MARKER="# <<< ${MARKER} <<<"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        dry_echo "remove_managed_block: $TARGET_FILE [$MARKER]"
+        return 0
+    fi
+
+    [ -f "$TARGET_FILE" ] || return 0
+
+    local start_count end_count start_line end_line
+    start_count=$(grep -cF "$START_MARKER" "$TARGET_FILE" || true)
+    end_count=$(grep -cF "$END_MARKER" "$TARGET_FILE" || true)
+    if [ "$start_count" -ne 1 ] || [ "$end_count" -ne 1 ]; then
+        return 0
+    fi
+
+    start_line=$(grep -nF "$START_MARKER" "$TARGET_FILE" | cut -d: -f1)
+    end_line=$(grep -nF "$END_MARKER" "$TARGET_FILE" | cut -d: -f1)
+    if [ "$start_line" -ge "$end_line" ]; then
+        return 0
+    fi
+
+    local TMP_FILE
+    TMP_FILE=$(mktemp)
+
+    awk -v start="$START_MARKER" -v end="$END_MARKER" '
+        $0 == start { skip=1; next }
+        $0 == end { skip=0; next }
+        skip != 1 { print }
+    ' "$TARGET_FILE" > "$TMP_FILE"
+
+    mv "$TMP_FILE" "$TARGET_FILE"
+}
+
 # ========================= 安装项选择 =========================
 
 is_feature_enabled() {
@@ -687,6 +772,21 @@ download_github_robust() {
 
     info "下载: $FILENAME"
     local SUCCESS=0
+    if [ -n "$PROXY_PORT" ]; then
+        echo -ne "${BLUE}  -> 本地代理直连 GitHub... ${NC}"
+        if wget -q --inet4-only --tries=2 --timeout=20 -e use_proxy=yes \
+            -e http_proxy="http://127.0.0.1:$PROXY_PORT" -e https_proxy="http://127.0.0.1:$PROXY_PORT" \
+            -O "$FILENAME" "$URL" && [ -s "$FILENAME" ]; then
+            echo -e "${GREEN}成功${NC}"
+            return 0
+        fi
+
+        echo -e "${YELLOW}失败${NC}"
+        rm -f "$FILENAME"
+        error "下载失败: $FILENAME"
+        return 1
+    fi
+
     for PROXY in "${GITHUB_MIRRORS[@]}"; do
         echo -ne "${BLUE}  -> ${PROXY:-"直连"} ... ${NC}"
         if wget -q --inet4-only --no-check-certificate --tries=1 --timeout=10 -O "$FILENAME" "${PROXY}${URL}" && [ -s "$FILENAME" ]; then
@@ -695,15 +795,6 @@ download_github_robust() {
             echo -e "${YELLOW}失败${NC}"; rm -f "$FILENAME"
         fi
     done
-
-    if [ $SUCCESS -eq 0 ] && [ -n "$PROXY_PORT" ]; then
-        echo -ne "${BLUE}  -> 本地代理... ${NC}"
-        if wget -q --inet4-only --tries=2 --timeout=20 -e use_proxy=yes \
-            -e http_proxy="http://127.0.0.1:$PROXY_PORT" -e https_proxy="http://127.0.0.1:$PROXY_PORT" \
-            -O "$FILENAME" "$URL" && [ -s "$FILENAME" ]; then
-            echo -e "${GREEN}成功${NC}"; SUCCESS=1
-        fi
-    fi
 
     [ $SUCCESS -eq 0 ] && { error "下载失败: $FILENAME"; return 1; }
     return 0

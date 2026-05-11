@@ -23,18 +23,18 @@ step_07_shell() {
     fi
     sudo timedatectl set-local-rtc 1 --adjust-system-clock
 
-    # tealdeer: 通过 ghfast.top 加速下载 tldr-pages
+    # tealdeer: 下载 tldr-pages 页面库
     local TLDR_PAGES_DIR="$HOME/.cache/tealdeer/tldr-pages"
     if [ ! -d "$TLDR_PAGES_DIR" ]; then
-        info "下载 tldr-pages（ghfast.top 加速）..."
+        info "下载 tldr-pages..."
         local TLDR_ZIP="/tmp/tldr.zip"
         local TLDR_TEMP="/tmp/tldr-temp"
+        local TLDR_URL="https://github.com/tldr-pages/tldr/archive/refs/heads/main.zip"
+        download_github_robust "$TLDR_URL" "$TLDR_ZIP"
         if [ "$DRY_RUN" -eq 1 ]; then
-            dry_echo "curl -L -o $TLDR_ZIP https://ghfast.top/https://github.com/tldr-pages/tldr/archive/refs/heads/main.zip"
             dry_echo "unzip -q $TLDR_ZIP -d $TLDR_TEMP"
             dry_echo "mkdir -p $TLDR_PAGES_DIR && mv $TLDR_TEMP/tldr-main/pages $TLDR_PAGES_DIR/"
         else
-            curl -L -o "$TLDR_ZIP" "https://ghfast.top/https://github.com/tldr-pages/tldr/archive/refs/heads/main.zip"
             unzip -q "$TLDR_ZIP" -d "$TLDR_TEMP"
             mkdir -p "$TLDR_PAGES_DIR"
             mv "$TLDR_TEMP/tldr-main/pages" "$TLDR_PAGES_DIR/"
@@ -50,4 +50,3 @@ step_07_shell() {
     append_if_missing "$HOME/.zshrc" "alias fd='fdfind'"
     append_if_missing "$HOME/.zshrc" "alias helpme='tldr --list | fzf --preview \"tldr {}\" --preview-window=right:70% | xargs tldr'"
 }
-
