@@ -4,13 +4,11 @@ step_10_compose_services() {
     log "10. 容器服务（Docker Compose）..."
 
     local ENABLE_XUNLEI=0
-    local ENABLE_AGM=0
 
     is_feature_enabled "xunlei" && ENABLE_XUNLEI=1
-    is_feature_enabled "antigravity_manager" && ENABLE_AGM=1
 
-    if [ "$ENABLE_XUNLEI" -eq 0 ] && [ "$ENABLE_AGM" -eq 0 ]; then
-        warn "未勾选迅雷/Antigravity-Manager，跳过"
+    if [ "$ENABLE_XUNLEI" -eq 0 ]; then
+        warn "未勾选迅雷，跳过"
         return 0
     fi
 
@@ -23,7 +21,6 @@ step_10_compose_services() {
     local COMPOSE_FILE="$COMPOSE_DIR/docker-compose-daily.yml"
     local ENV_FILE="$COMPOSE_DIR/.env.daily"
     local THUNDER_DIR="$HOME/thunder"
-    local AGM_TOOLS_DIR="$COMPOSE_DIR/antigravity_tools"
 
     local HOST_UID HOST_GID
     HOST_UID=$(id -u)
@@ -35,19 +32,11 @@ step_10_compose_services() {
         chown -R "$HOST_UID:$HOST_GID" "$THUNDER_DIR" 2>/dev/null || \
             sudo chown -R "$HOST_UID:$HOST_GID" "$THUNDER_DIR"
     fi
-    if [ "$ENABLE_AGM" -eq 1 ]; then
-        mkdir -p "$AGM_TOOLS_DIR"
-        chown -R "$HOST_UID:$HOST_GID" "$AGM_TOOLS_DIR" 2>/dev/null || \
-            sudo chown -R "$HOST_UID:$HOST_GID" "$AGM_TOOLS_DIR"
-    fi
 
     write_file "$ENV_FILE" <<EOF
 HOST_UID=$HOST_UID
 HOST_GID=$HOST_GID
 HOME_DIR=$HOME
-AGM_API_KEY=change_me_api_key
-AGM_WEB_PASSWORD=change_me_password
-AGM_ABV_MAX_BODY_SIZE=20mb
 EOF
 
     write_file "$COMPOSE_FILE" <<'EOF'
@@ -70,23 +59,6 @@ EOF
       - ${HOME_DIR}/thunder/downloads:/xunlei/downloads
       - ${HOME_DIR}/thunder/data:/xunlei/data
       - ${HOME_DIR}/thunder/cache:/xunlei/var/packages/pan-xunlei-com
-EOF
-    fi
-    if [ "$ENABLE_AGM" -eq 1 ]; then
-        append_file "$COMPOSE_FILE" <<'EOF'
-  antigravity-manager:
-    image: lbjlaq/antigravity-manager:latest
-    container_name: antigravity-manager
-    restart: unless-stopped
-    ports:
-      - "8045:8045"
-    environment:
-      API_KEY: ${AGM_API_KEY}
-      WEB_PASSWORD: ${AGM_WEB_PASSWORD}
-      ABV_MAX_BODY_SIZE: ${AGM_ABV_MAX_BODY_SIZE}
-    volumes:
-      - ${HOME_DIR}/docker-settings/antigravity_tools:/root/.antigravity_tools
-    mem_limit: 512m
 EOF
     fi
 
@@ -115,12 +87,8 @@ EOF
     compose_run config >/dev/null
     local -a TARGET_SERVICES=()
     [ "$ENABLE_XUNLEI" -eq 1 ] && TARGET_SERVICES+=("xunlei")
-    [ "$ENABLE_AGM" -eq 1 ] && TARGET_SERVICES+=("antigravity-manager")
     compose_run up -d "${TARGET_SERVICES[@]}"
 
     info "已部署服务：${TARGET_SERVICES[*]}"
     info "compose 文件：$COMPOSE_FILE"
-    if [ "$ENABLE_AGM" -eq 1 ]; then
-        info "请按需修改 $ENV_FILE 中的 AGM_API_KEY / AGM_WEB_PASSWORD"
-    fi
 }

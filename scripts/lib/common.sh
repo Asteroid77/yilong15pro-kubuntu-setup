@@ -657,7 +657,6 @@ select_install_features() {
         "plasma_appearance|Orchis Light + 顶部 Dock 布局|off"
         "obsidian|Obsidian|on"
         "xunlei|迅雷（Docker Compose）|on"
-        "antigravity_manager|Antigravity-Manager（Docker Compose）|on"
     )
 
     echo ""
