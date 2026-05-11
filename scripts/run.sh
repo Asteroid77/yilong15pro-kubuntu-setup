@@ -72,8 +72,6 @@ source "$ROOT_DIR/scripts/steps/09_fcitx_rime.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/10_compose_services.sh"
 # shellcheck source=/dev/null
-source "$ROOT_DIR/scripts/steps/11_mt7922.sh"
-# shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/12_terminal_tools.sh"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/scripts/steps/13_kitty.sh"
@@ -95,7 +93,6 @@ main() {
     step_08_obsidian
     step_09_fcitx_rime
     step_10_compose_services
-    step_11_mt7922
     step_12_terminal_tools
     step_13_kitty
     step_14_plasma_appearance

@@ -316,11 +316,6 @@ wps_latest_deb_url() {
 
 # ========================= 通用函数 =========================
 
-has_mt7922_wifi() {
-    command -v lspci &>/dev/null || return 1
-    lspci -nn 2>/dev/null | grep -Eiq '(mt7922|7922|14c3:0616|14c3:0626)'
-}
-
 ensure_grub_cmdline_linux_default() {
     local DESIRED=$1
     local GRUB_FILE="/etc/default/grub"
@@ -351,19 +346,6 @@ ensure_grub_cmdline_linux_default() {
     else
         warn "未找到 update-grub，请手动执行 update-grub 并重启"
     fi
-}
-
-is_nvidia_driver_available() {
-    command -v modinfo &>/dev/null || return 1
-    modinfo nvidia_drm &>/dev/null
-}
-
-nvidia_drm_modeset_enabled() {
-    local PATH_MODESET="/sys/module/nvidia_drm/parameters/modeset"
-    [ -r "$PATH_MODESET" ] || return 1
-    local VALUE
-    VALUE=$(cat "$PATH_MODESET" 2>/dev/null || true)
-    [ "$VALUE" = "Y" ] || [ "$VALUE" = "1" ]
 }
 
 is_graphical_session() {
@@ -402,17 +384,6 @@ restart_fcitx5_if_graphical() {
     fi
 
     run_if_graphical restart_fcitx5_process
-}
-
-enable_nvidia_drm_modeset() {
-    local CONF="/etc/modprobe.d/nvidia-drm-modeset.conf"
-    local LINE="options nvidia-drm modeset=1"
-    info "写入: $CONF"
-    echo "$LINE" | sudo tee "$CONF" > /dev/null
-    if command -v update-initramfs &>/dev/null; then
-        info "更新 initramfs..."
-        sudo update-initramfs -u
-    fi
 }
 
 rewrite_keep_only_xmodifiers() {
