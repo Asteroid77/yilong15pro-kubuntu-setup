@@ -108,15 +108,24 @@ EOF
         is_feature_enabled "go" && warn "Go 已安装" || warn "未勾选 Go，跳过"
     fi
 
-    if is_feature_enabled "miniconda" && [ ! -d "$HOME/miniconda3" ]; then
-        info "安装 Miniconda..."
-        smart_download "$MINICONDA_INSTALLER" "miniconda.sh"
-        bash miniconda.sh -b -p "$HOME/miniconda3"
-        "$HOME/miniconda3/bin/conda" init bash zsh
-        "$HOME/miniconda3/bin/conda" config --add channels "${CONDA_MIRROR_BASE}/pkgs/free/"
-        "$HOME/miniconda3/bin/conda" config --set show_channel_urls yes
+    install_uv() {
+        if command -v uv >/dev/null 2>&1 || [ -x "$HOME/.local/bin/uv" ]; then
+            warn "uv 已安装"
+            return 0
+        fi
+
+        if [ "$DRY_RUN" -eq 1 ]; then
+            dry_echo "curl -LsSf https://astral.sh/uv/install.sh | sh"
+            return 0
+        fi
+
+        with_proxy_env bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+    }
+
+    if is_feature_enabled "uv"; then
+        info "安装 uv..."
+        install_uv
     else
-        is_feature_enabled "miniconda" && warn "Miniconda 已安装" || warn "未勾选 Miniconda，跳过"
+        warn "未勾选 uv，跳过"
     fi
 }
-
