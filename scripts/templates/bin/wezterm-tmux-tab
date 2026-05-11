@@ -1,0 +1,302 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+business_prefix="${WEZTERM_TMUX_BUSINESS_PREFIX:-wezterm-work-}"
+technical_prefix="${WEZTERM_TMUX_TECHNICAL_PREFIX:-wezterm-tech-}"
+legacy_main_session="${WEZTERM_TMUX_MAIN_SESSION:-main}"
+legacy_tab_prefix="${WEZTERM_TMUX_TAB_PREFIX:-wezterm-tab}"
+tmux_socket="${WEZTERM_TMUX_SOCKET:-$HOME/.local/state/tmux-wezterm/main.sock}"
+tmux_config="${WEZTERM_TMUX_CONFIG:-$HOME/.config/tmux/wezterm.conf}"
+resurrect_dir="${WEZTERM_TMUX_RESURRECT_DIR:-$HOME/.local/state/wezterm-tmux/resurrect}"
+restore_script="$HOME/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
+bootstrap_session="${technical_prefix}bootstrap"
+
+mkdir -p "$(dirname "$tmux_socket")"
+mkdir -p "$resurrect_dir"
+
+tmux_cmd() {
+	tmux -S "$tmux_socket" -f "$tmux_config" "$@"
+}
+
+tmux_server_running() {
+	tmux_cmd list-sessions >/dev/null 2>&1
+}
+
+session_exists() {
+	local session_name="$1"
+	tmux_cmd has-session -t "$session_name" 2>/dev/null
+}
+
+set_wezterm_user_var() {
+	local name="$1"
+	local value="$2"
+	local encoded
+	encoded="$(printf '%s' "$value" | base64 -w0)"
+	printf '\033]1337;SetUserVar=%s=%s\007' "$name" "$encoded"
+}
+
+is_technical_session() {
+	local session_name="$1"
+
+	case "$session_name" in
+		"${technical_prefix}"*|"${legacy_tab_prefix}"-*)
+			return 0
+			;;
+	esac
+
+	return 1
+}
+
+is_business_session() {
+	local session_name="$1"
+
+	[ -n "$session_name" ] || return 1
+
+	case "$session_name" in
+		"$legacy_main_session"|meteor-tab-*|meteor-bootstrap)
+			return 1
+			;;
+		*:*)
+			return 1
+			;;
+		*$'\t'*|*$'\n'*)
+			return 1
+			;;
+	esac
+
+	if is_technical_session "$session_name"; then
+		return 1
+	fi
+
+	return 0
+}
+
+normalize_session_name() {
+	printf '%s' "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+require_business_session_name() {
+	local session_name
+	session_name="$(normalize_session_name "$1")"
+
+	if ! is_business_session "$session_name"; then
+		printf 'invalid or reserved tmux session name: %s\n' "$1" >&2
+		return 1
+	fi
+
+	printf '%s' "$session_name"
+}
+
+ensure_restored_server() {
+	if tmux_server_running; then
+		return 0
+	fi
+
+	tmux_cmd new-session -d -s "$bootstrap_session"
+
+	if [ -x "$restore_script" ] && [ -e "$resurrect_dir/last" ]; then
+		TMUX="$tmux_socket,0,0" tmux -S "$tmux_socket" -f "$tmux_config" set-option -gq @resurrect-dir "$resurrect_dir"
+		TMUX="$tmux_socket,0,0" "$restore_script" >/dev/null 2>&1 || true
+	fi
+
+	tmux_cmd kill-session -t "$bootstrap_session" 2>/dev/null || true
+}
+
+cleanup_technical_sessions() {
+	ensure_restored_server
+
+	local sessions
+	sessions="$(tmux_cmd list-sessions -F '#{session_name}	#{session_attached}' 2>/dev/null || true)"
+
+	printf '%s\n' "$sessions" |
+		while IFS=$'\t' read -r session_name session_attached; do
+			[ -n "$session_name" ] || continue
+			if is_technical_session "$session_name" && [ "$session_attached" = "0" ]; then
+				tmux_cmd kill-session -t "$session_name" 2>/dev/null || true
+			fi
+		done
+}
+
+list_sessions() {
+	ensure_restored_server
+	cleanup_technical_sessions
+
+	local sessions
+	sessions="$(tmux_cmd list-sessions -F '#{session_name}' 2>/dev/null || true)"
+
+	printf '%s\n' "$sessions" |
+		while IFS= read -r session_name; do
+			if is_business_session "$session_name"; then
+				printf '%s\t%s\n' "$session_name" "$session_name"
+			fi
+		done
+}
+
+next_session_name() {
+	local index=1
+	local session_name
+
+	while true; do
+		session_name="${business_prefix}${index}"
+		if ! session_exists "$session_name"; then
+			printf '%s\n' "$session_name"
+			return 0
+		fi
+		index=$((index + 1))
+	done
+}
+
+new_session() {
+	ensure_restored_server
+	cleanup_technical_sessions
+
+	local session_name
+	session_name="$(next_session_name)"
+	tmux_cmd new-session -d -s "$session_name"
+	printf '%s\n' "$session_name"
+}
+
+ensure_default_business_session() {
+	local first_session
+
+	first_session="$(list_sessions | sed -n '1{s/	.*$//;p;}')"
+	if [ -n "$first_session" ]; then
+		return 0
+	fi
+
+	new_session >/dev/null
+}
+
+startup_list() {
+	ensure_default_business_session
+	list_sessions
+}
+
+attach_new_session() {
+	local session_name
+	session_name="$(new_session)"
+	attach_session "$session_name"
+}
+
+attach_session() {
+	local session_name="${1:?missing tmux session name}"
+	session_name="$(require_business_session_name "$session_name")"
+
+	ensure_restored_server
+	if ! session_exists "$session_name"; then
+		tmux_cmd new-session -d -s "$session_name"
+	fi
+
+	set_wezterm_user_var tmux_session_name "$session_name"
+	exec tmux -S "$tmux_socket" -f "$tmux_config" attach-session -t "$session_name"
+}
+
+rename_session() {
+	local old_session="${1:?missing tmux session name}"
+	local new_session_name="${2:?missing new tmux session name}"
+
+	old_session="$(require_business_session_name "$old_session")"
+	new_session_name="$(require_business_session_name "$new_session_name")"
+
+	ensure_restored_server
+	if ! session_exists "$old_session"; then
+		printf 'tmux session does not exist: %s\n' "$old_session" >&2
+		return 1
+	fi
+
+	if [ "$old_session" != "$new_session_name" ] && session_exists "$new_session_name"; then
+		printf 'tmux session already exists: %s\n' "$new_session_name" >&2
+		return 1
+	fi
+
+	tmux_cmd rename-session -t "$old_session" "$new_session_name"
+	printf '%s\n' "$new_session_name"
+}
+
+reload_config() {
+	ensure_default_business_session
+	tmux_cmd source-file "$tmux_config"
+	tmux_cmd display-message 'wezterm tmux config reloaded'
+}
+
+filter_resurrect() {
+	local resurrect_file="${1:?missing resurrect file path}"
+	local tmp_file
+
+	[ -f "$resurrect_file" ] || return 0
+	tmp_file="${resurrect_file}.tmp.$$"
+
+	awk -F '\t' \
+		-v OFS='\t' \
+		-v legacy_main="$legacy_main_session" \
+		-v legacy_tab_prefix="${legacy_tab_prefix}-" \
+		-v technical_prefix="$technical_prefix" '
+		function business(session_name) {
+			if (session_name == "") return 0
+			if (session_name == legacy_main) return 0
+			if (session_name ~ /:/) return 0
+			if (index(session_name, technical_prefix) == 1) return 0
+			if (index(session_name, legacy_tab_prefix) == 1) return 0
+			if (index(session_name, "meteor-tab-") == 1) return 0
+			if (session_name == "meteor-bootstrap") return 0
+			return 1
+		}
+
+		$1 == "pane" || $1 == "window" {
+			if (business($2)) print
+			next
+		}
+
+		$1 == "state" {
+			if (business($2) && business($3)) {
+				print
+			} else if (business($2)) {
+				print "state", $2, $2
+			} else if (business($3)) {
+				print "state", $3, $3
+			}
+			next
+		}
+	' "$resurrect_file" > "$tmp_file"
+	mv "$tmp_file" "$resurrect_file"
+}
+
+case "${1:-attach-new}" in
+	list)
+		list_sessions
+		;;
+	startup-list)
+		startup_list
+		;;
+	names)
+		list_sessions
+		;;
+	cleanup)
+		cleanup_technical_sessions
+		;;
+	new)
+		new_session
+		;;
+	attach-new)
+		attach_new_session
+		;;
+	rename)
+		shift
+		rename_session "$@"
+		;;
+	reload)
+		reload_config
+		;;
+	filter-resurrect)
+		shift
+		filter_resurrect "$@"
+		;;
+	attach)
+		shift
+		attach_session "$@"
+		;;
+	*)
+		printf 'usage: %s list|startup-list|names|cleanup|new|attach-new|rename <session-name> <new-name>|reload|filter-resurrect <file>|attach <session-name>\n' "$0" >&2
+		exit 2
+		;;
+esac
